@@ -2,6 +2,7 @@
 import * as store from './store.js';
 import { today } from './dates.js';
 import { icons } from './ui.js';
+import { themeById } from './themes.js';
 import { unlockAudio, pop, haptic } from './fx.js';
 import { nav, setRenderer } from './nav.js';
 import { renderToday, leaveToday } from './screens/today.js';
@@ -29,8 +30,12 @@ const SKIES = [
 ];
 
 function paintSky() {
+  const theme = themeById(store.prefs().theme);
+  document.body.dataset.theme = theme.id;
   const h = new Date().getHours();
-  const s = [...SKIES].reverse().find((x) => h >= x.from);
+  const s = theme.sky
+    ? { sky1: theme.sky[0], sky2: theme.sky[1], sky3: theme.sky[2], stars: 0, theme: theme.sky[0] }
+    : [...SKIES].reverse().find((x) => h >= x.from);
   const r = document.documentElement.style;
   r.setProperty('--sky1', s.sky1);
   r.setProperty('--sky2', s.sky2);
@@ -83,6 +88,7 @@ tabs.addEventListener('click', (e) => {
 
 // As telas "Hoje" e "Aprender" se atualizam sozinhas; as outras são redesenhadas quando os dados mudam.
 store.subscribe(() => {
+  paintSky();
   if (nav.tab !== 'today' && nav.tab !== 'learn') render();
 });
 

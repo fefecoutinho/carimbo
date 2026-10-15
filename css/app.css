@@ -80,6 +80,97 @@ input, textarea { font: inherit; -webkit-user-select: text; user-select: text; }
   mask-image: linear-gradient(180deg, #000 0%, transparent 60%);
 }
 
+/* ---------- Temas ---------- */
+.tprev.ceu { background: radial-gradient(90% 70% at 85% 0%, #ff6fae, transparent 65%), linear-gradient(180deg, #6a3bff, #2a1a6e); }
+
+body[data-theme=madeira] #sky, .tprev.madeira {
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(255, 200, 140, 0.35), transparent 60%),
+    repeating-linear-gradient(92deg, rgba(60, 25, 5, 0) 0px, rgba(60, 25, 5, 0.2) 3px, rgba(60, 25, 5, 0) 7px, rgba(255, 220, 170, 0.07) 12px, rgba(60, 25, 5, 0) 18px),
+    repeating-linear-gradient(88deg, transparent 0 46px, rgba(40, 15, 0, 0.28) 47px, transparent 50px 104px),
+    linear-gradient(180deg, #8a5228 0%, #5b3216 55%, #2a1609 100%);
+}
+
+body[data-theme=ouro] #sky, .tprev.ouro {
+  background:
+    linear-gradient(115deg, transparent 30%, rgba(255, 236, 170, 0.22) 45%, transparent 60%) 0 0 / 250% 100%,
+    radial-gradient(90% 60% at 80% 0%, rgba(242, 193, 78, 0.6), transparent 65%),
+    radial-gradient(70% 50% at 0% 60%, rgba(180, 120, 30, 0.35), transparent 70%),
+    linear-gradient(180deg, #3a2a0c, #120d05 75%);
+}
+body[data-theme=ouro] #sky { animation: gold-sheen 9s ease-in-out infinite; }
+@keyframes gold-sheen {
+  0%, 100% { background-position: 160% 0, 0 0, 0 0, 0 0; }
+  50% { background-position: -60% 0, 0 0, 0 0, 0 0; }
+}
+
+body[data-theme=cromo] #sky, .tprev.cromo {
+  background:
+    linear-gradient(180deg, rgba(10, 0, 30, 0.1), rgba(10, 0, 30, 0.55) 70%),
+    conic-gradient(from 210deg at 75% 15%, #ff3b5c, #ffc21a, #1fc77e, #14b8c4, #2f7bff, #b44bff, #ff4fb8, #ff3b5c);
+}
+body[data-theme=cromo] #sky { animation: chroma-spin 24s linear infinite; }
+@keyframes chroma-spin { to { filter: hue-rotate(360deg); } }
+
+body[data-theme=opala] #sky, .tprev.opala {
+  background:
+    radial-gradient(60% 40% at 20% 10%, rgba(255, 190, 240, 0.55), transparent 70%),
+    radial-gradient(60% 45% at 90% 25%, rgba(150, 255, 230, 0.5), transparent 70%),
+    radial-gradient(70% 50% at 50% 70%, rgba(170, 190, 255, 0.35), transparent 70%),
+    linear-gradient(180deg, #4a5f9a, #1a2348 70%, #0e1630);
+  background-size: 180% 180%, 180% 180%, 180% 180%, 100% 100%;
+}
+body[data-theme=opala] #sky { animation: opal-drift 16s ease-in-out infinite alternate; }
+@keyframes opal-drift {
+  from { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
+  to { background-position: 100% 60%, 0% 80%, 50% 0%, 0 0; }
+}
+
+body[data-theme=monstro] #sky, .tprev.monstro {
+  background:
+    radial-gradient(circle at 20px 20px, rgba(124, 255, 107, 0.16) 0 9px, transparent 10px) 0 0 / 64px 64px,
+    radial-gradient(circle at 52px 50px, rgba(255, 79, 184, 0.16) 0 6px, transparent 7px) 0 0 / 64px 64px,
+    radial-gradient(100% 60% at 50% 0%, rgba(124, 255, 107, 0.35), transparent 60%),
+    linear-gradient(180deg, #3d1a78, #1a0b3a 75%);
+}
+
+body[data-theme=grafite] #sky, .tprev.grafite {
+  background: radial-gradient(100% 60% at 50% 0%, #34343f, transparent 70%), linear-gradient(180deg, #17171d, #0b0b0f);
+}
+
+.themes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.theme {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 8px 12px;
+  border-radius: 24px;
+  text-align: left;
+  background: var(--glass);
+  border: 2px solid var(--glass-line);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.18);
+  transition: transform 0.14s cubic-bezier(0.3, 0.7, 0.4, 1.4), border-color 0.2s;
+}
+.theme:active { transform: scale(0.96); }
+.theme.on { border-color: #fff; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.18), 0 0 0 3px rgba(255, 255, 255, 0.35); }
+.theme .t-name { font-weight: 800; font-size: 15px; padding: 4px 6px 0; }
+.theme.on .t-name::after { content: ' ✓'; }
+.theme .t-kind { font-size: 12px; font-weight: 700; opacity: 0.7; padding: 0 6px; line-height: 1.3; }
+.tprev { position: relative; width: 100%; aspect-ratio: 1.5; border-radius: 18px; overflow: hidden; display: grid; place-items: center; }
+
+/* Mini carimbo desenhado em CSS na prévia de cada tema. */
+.tstamp { position: relative; width: 46px; height: 50px; }
+.tstamp::before { content: ''; position: absolute; left: 13px; top: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--k, #ff7a8f); box-shadow: inset -3px -4px 0 rgba(0, 0, 0, 0.15); }
+.tstamp::after { content: ''; position: absolute; left: 0; bottom: 0; width: 46px; height: 22px; border-radius: 7px; background: var(--b, #ff3b5c); box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.2), 0 6px 10px rgba(0, 0, 0, 0.3); }
+.tstamp { background: linear-gradient(var(--n, #fff4e2), var(--n, #fff4e2)) 19px 16px / 8px 14px no-repeat; }
+.tstamp.madeira { --k: #a8662f; --b: repeating-linear-gradient(90deg, #c98a4e 0 4px, #b5743a 4px 7px); --n: #d9a067; }
+.tstamp.ouro { --k: radial-gradient(circle at 35% 30%, #fff3c4, #e8b64a 55%, #9a6d16); --b: linear-gradient(180deg, #f5cf6b, #b8862a); --n: #c99632; }
+.tstamp.cromo { --k: conic-gradient(#ff3b5c, #ffc21a, #1fc77e, #2f7bff, #b44bff, #ff3b5c); --b: linear-gradient(90deg, #ff3b8a, #2fd1ff); }
+.tstamp.opala { --k: radial-gradient(circle at 35% 30%, #fff, #e3d9ff 45%, #a8f0e6); --b: linear-gradient(120deg, #ffe3f6, #e6e9ff, #c9fff4); --n: #eef6ff; }
+.tstamp.monstro { --k: radial-gradient(circle at 34% 45%, #111 0 2px, #fff 2.5px 5px, transparent 5.5px), radial-gradient(circle at 66% 45%, #111 0 2px, #fff 2.5px 5px, transparent 5.5px), #7cff6b; --b: #4fd64a; }
+.tstamp.grafite { --k: #3a3a44; --b: #2a2a32; --n: #8a8a96; }
+
 /* ---------- Estrutura ---------- */
 .screen {
   padding: calc(var(--safe-top) + 92px) 16px calc(var(--safe-bottom) + 118px);
@@ -1044,7 +1135,7 @@ body.playing #tabs, body.playing #appbar { display: none; }
   gap: 4px;
   padding: 6px;
   border-radius: 30px;
-  background: rgba(20, 8, 60, 0.45);
+  background: color-mix(in srgb, var(--sky1) 60%, rgba(0, 0, 0, 0.25));
   border: 1px solid rgba(255, 255, 255, 0.16);
   -webkit-backdrop-filter: blur(24px) saturate(1.4);
   backdrop-filter: blur(24px) saturate(1.4);

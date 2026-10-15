@@ -4,8 +4,9 @@ import { esc, icons, toast } from '../ui.js';
 import { openEditor } from '../sheets.js';
 import { pop, haptic } from '../fx.js';
 import { nav } from '../nav.js';
+import { THEMES } from '../themes.js';
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 
@@ -57,6 +58,12 @@ export function renderSettings(el) {
       <div class="trow"><button class="pill solid" data-act="new" style="width:100%;justify-content:center">+ Novo marcador</button></div>
     </div>
 
+    <div class="group-title">Tema</div>
+    <div class="themes">${THEMES.map((th) => `<button class="theme ${p.theme === th.id ? 'on' : ''}" data-theme-pick="${th.id}">
+      <span class="tprev ${th.id}"><span class="tstamp ${th.id}"></span></span>
+      <span class="t-name">${th.name}</span><span class="t-kind">${th.desc}</span>
+    </button>`).join('')}</div>
+
     <div class="group-title">Sensações</div>
     <div class="panel">
       <div class="trow"><div class="grow"><div class="t-name">🔊 Som ao carimbar</div><div class="t-kind">Respeita o modo silencioso do iPhone</div></div>
@@ -87,7 +94,13 @@ export function renderSettings(el) {
     const b = e.target.closest('button');
     if (!b) return;
     const d = b.dataset;
-    if (d.edit) { pop(); haptic(); openEditor(store.tracker(d.edit)); }
+    if (d.themePick) {
+      if (store.prefs().theme === d.themePick) return;
+      store.setPref('theme', d.themePick);
+      pop(true);
+      haptic(true);
+      toast(`Tema ${THEMES.find((t) => t.id === d.themePick).name} ✨`);
+    } else if (d.edit) { pop(); haptic(); openEditor(store.tracker(d.edit)); }
     else if (d.move) { store.moveTracker(d.move, Number(d.dir)); pop(); haptic(); }
     else if (d.pref) { store.setPref(d.pref, !store.prefs()[d.pref]); pop(store.prefs()[d.pref]); haptic(); }
     else if (d.act === 'new') { pop(); haptic(); openEditor(null); }

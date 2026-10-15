@@ -6,6 +6,7 @@ import { openLog } from '../sheets.js';
 import { thump, haptic, inkBurst, pop, swoosh } from '../fx.js';
 import { createStampScene, createFlatPaper } from '../scene.js';
 import { nav, go } from '../nav.js';
+import { themeById } from '../themes.js';
 
 let canvas = null;
 let scene = null;
@@ -158,6 +159,7 @@ export function renderToday(el) {
   const hero = el.querySelector('.hero');
   hero.prepend(canvas);
   scene.setActive(true);
+  scene.setLook(themeById(store.prefs().theme).stamp);
   scene.setDay(nav.date);
   update();
 

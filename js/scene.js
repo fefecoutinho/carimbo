@@ -24,6 +24,30 @@ function shade(hex, amt) {
   return c;
 }
 
+// Textura de veios de madeira desenhada na hora.
+function makeWoodTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#d29a5e';
+  g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 46; i++) {
+    const y0 = Math.random() * 256;
+    g.strokeStyle = `rgba(${90 + Math.random() * 30},${45 + Math.random() * 20},15,${0.15 + Math.random() * 0.3})`;
+    g.lineWidth = 0.8 + Math.random() * 2.6;
+    g.beginPath();
+    for (let x = 0; x <= 256; x += 8) {
+      const y = y0 + Math.sin(x / 38 + i) * 5 + Math.sin(x / 11 + i * 3) * 1.2;
+      if (x === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
 export function createStampScene(canvas) {
   let renderer;
   try {
@@ -108,6 +132,63 @@ export function createStampScene(canvas) {
   for (const m of [base, pad, neck, knob]) { m.castShadow = true; stamp.add(m); }
   stamp.position.copy(REST);
   scene.add(stamp);
+
+  // ---------- Materiais por tema ----------
+  // 'toy'/'chroma'/'monster': plástico que muda de cor com a tinta; os outros têm corpo fixo.
+  let look = 'toy';
+  const woodTex = makeWoodTexture();
+  const looks = {
+    wood: {
+      body: new THREE.MeshPhysicalMaterial({ map: woodTex, color: '#c98a4e', roughness: 0.55, clearcoat: 0.5, clearcoatRoughness: 0.3 }),
+      knob: new THREE.MeshPhysicalMaterial({ map: woodTex, color: '#a8662f', roughness: 0.45, clearcoat: 0.7, clearcoatRoughness: 0.2 }),
+      neck: new THREE.MeshPhysicalMaterial({ map: woodTex, color: '#d9a067', roughness: 0.6 }),
+    },
+    gold: {
+      body: new THREE.MeshPhysicalMaterial({ color: '#e8b64a', metalness: 1, roughness: 0.22, clearcoat: 0.6 }),
+      knob: new THREE.MeshPhysicalMaterial({ color: '#f5cf6b', metalness: 1, roughness: 0.15, clearcoat: 1 }),
+      neck: new THREE.MeshPhysicalMaterial({ color: '#c99632', metalness: 1, roughness: 0.3 }),
+    },
+    opal: {
+      body: new THREE.MeshPhysicalMaterial({ color: '#f2efff', roughness: 0.12, clearcoat: 1, iridescence: 1, iridescenceIOR: 1.7, iridescenceThicknessRange: [180, 820] }),
+      knob: new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.08, clearcoat: 1, iridescence: 1, iridescenceIOR: 1.8, iridescenceThicknessRange: [250, 900] }),
+      neck: new THREE.MeshPhysicalMaterial({ color: '#e6f4ff', roughness: 0.2, clearcoat: 1, iridescence: 0.6 }),
+    },
+    graphite: {
+      body: new THREE.MeshPhysicalMaterial({ color: '#2a2a32', roughness: 0.5, clearcoat: 0.35, clearcoatRoughness: 0.4 }),
+      knob: new THREE.MeshPhysicalMaterial({ color: '#3a3a44', roughness: 0.35, clearcoat: 0.6 }),
+      neck: new THREE.MeshPhysicalMaterial({ color: '#8a8a96', metalness: 0.8, roughness: 0.3 }),
+    },
+  };
+
+  // Olhinhos do tema Monstro.
+  const eyes = new THREE.Group();
+  const pupils = [];
+  const white = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.2, clearcoat: 1 });
+  const black = new THREE.MeshStandardMaterial({ color: '#111111', roughness: 0.3 });
+  for (const sx of [-1, 1]) {
+    const dir = new THREE.Vector3(sx * 0.16, 0.1, 0.36).normalize();
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.13, 32, 24), white);
+    eye.position.copy(dir.clone().multiplyScalar(0.36));
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.065, 24, 16), black);
+    pupil.position.copy(dir.clone().multiplyScalar(0.47));
+    pupil.userData.base = pupil.position.clone();
+    pupils.push(pupil);
+    eyes.add(eye, pupil);
+  }
+  eyes.visible = false;
+  knob.add(eyes);
+
+  function setLook(next) {
+    if (next === look) return;
+    look = next;
+    const fixed = looks[look];
+    base.material = fixed ? fixed.body : plastic;
+    knob.material = fixed ? fixed.knob : knobMat;
+    neck.material = fixed ? fixed.neck : neckMat;
+    eyes.visible = look === 'monster';
+    setInk(look === 'monster' ? '#7cff6b' : '#ff3b5c');
+    wake();
+  }
 
   function setInk(hex) {
     plastic.color.set(hex);
@@ -214,6 +295,17 @@ export function createStampScene(canvas) {
       if (p >= 1) { tasks.splice(i, 1); k.resolve(); }
     }
 
+    if (look === 'chroma') {
+      knobMat.color.setHSL((t * 0.08) % 1, 0.85, 0.6);
+      plastic.color.setHSL((t * 0.08 + 0.5) % 1, 0.8, 0.55);
+    }
+    if (look === 'monster') {
+      const lx = Math.sin(t * 0.9) * 0.03 + Math.sin(t * 2.3) * 0.01;
+      const ly = Math.cos(t * 0.7) * 0.02;
+      for (const p of pupils) p.position.set(p.userData.base.x + lx, p.userData.base.y + ly, p.userData.base.z);
+      const blink = (t % 4.2) < 0.12 ? 0.1 : 1;
+      eyes.scale.set(1, blink, 1);
+    }
     if (!busy) {
       stamp.position.y = REST.y + Math.sin(t * 1.7) * 0.09;
       stamp.rotation.set(-0.12 + Math.sin(t * 1.1) * 0.04, Math.sin(t * 0.6) * 0.35, 0.22 + Math.cos(t * 0.9) * 0.05);
@@ -264,7 +356,7 @@ export function createStampScene(canvas) {
   document.addEventListener('visibilitychange', () => setActive(wanted));
   setActive(true);
 
-  return { setDay, stamp: stampIt, redraw, setActive, isBusy: () => busy };
+  return { setDay, stamp: stampIt, redraw, setActive, setLook, isBusy: () => busy };
 }
 
 // Sem WebGL: mostra a folha desenhada em 2D.
@@ -283,6 +375,7 @@ export function createFlatPaper(canvas) {
     },
     redraw,
     setActive() {},
+    setLook() {},
     isBusy: () => false,
   };
 }
