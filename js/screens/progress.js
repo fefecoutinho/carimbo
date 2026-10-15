@@ -4,6 +4,7 @@ import { today, addDays, parse, monthOf, shortDate, fmtNumber, MONTHS } from '..
 import { esc } from '../ui.js';
 import { pop, haptic } from '../fx.js';
 import { TENSES } from '../learn/conj.js';
+import { deckStats } from '../learn/vocab.js';
 
 const RANGES = [
   { id: '30', label: '30 dias', days: 30 },
@@ -169,6 +170,24 @@ function emptyPanel(t, msg) {
     <p class="empty">${esc(msg)}</p></div>`;
 }
 
+function vocabBlock() {
+  const V = store.vocab();
+  const ds = deckStats(V, Date.now());
+  if (!ds.seen) return '';
+  const since = addDays(today(), -29);
+  let rev = 0;
+  let revOk = 0;
+  for (const [k, d] of Object.entries(V.daily)) if (k >= since) { rev += d.rev || 0; revOk += d.revOk || 0; }
+  return `<div class="field-label" style="color:rgba(255,255,255,.75);margin:18px 0 8px">Vocabulário</div>
+    <div class="stat-row">
+      <div class="stat"><div class="v">${ds.seen}</div><div class="k">cartas em estudo</div></div>
+      <div class="stat"><div class="v">${ds.mature}</div><div class="k">bem fixadas</div></div>
+      <div class="stat"><div class="v">${rev ? Math.round((revOk / rev) * 100) : '–'}${rev ? '<small>%</small>' : ''}</div><div class="k">lembrou nas revisões (30d)</div></div>
+    </div>
+    <div class="bar learn-bar" style="--c:#19c39a"><span>Baralho</span>
+      <div class="track"><div class="fill" style="width:${(ds.seen / ds.total) * 100}%"></div></div><span>${Math.round((ds.seen / ds.total) * 100)}%</span></div>`;
+}
+
 function learnPanel() {
   const L = store.learn();
   const days = Object.keys(L.days);
@@ -192,6 +211,7 @@ function learnPanel() {
       return `<div class="bar learn-bar" style="--c:${TENSES[t].color}"><span>${esc(TENSES[t].fr)}</span>
         <div class="track"><div class="fill" style="width:${pct}%"></div></div><span>${pct}%</span></div>`;
     }).join('')}</div>` : ''}
+    ${vocabBlock()}
     ${review.length ? `<div class="field-label" style="color:rgba(255,255,255,.75);margin:16px 0 8px">Verbos pra revisar</div>
       <div class="chips">${review.map(([v, n]) => `<span class="chip" style="background:rgba(255,255,255,.14);color:#fff">${esc(v)} <b style="opacity:.6">×${n}</b></span>`).join('')}</div>` : ''}
   </div>`;

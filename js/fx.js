@@ -193,6 +193,8 @@ export const success = () => notes([392, 494, 587, 784], { gap: 0.075, len: 0.28
 export const almost = () => notes([440, 523], { gap: 0.1, len: 0.22, vol: 0.18 });
 // Erro: duas notas graves descendo.
 export const fail = () => notes([220, 165], { type: 'sine', gap: 0.13, len: 0.3, vol: 0.32 });
+// Carta lembrada: duas notinhas curtas.
+export const ding = () => notes([494, 659], { gap: 0.07, len: 0.22, vol: 0.16 });
 // Fim de rodada: fanfarra curtinha.
 export const fanfare = () => notes([392, 494, 587, 784, 587, 784], { gap: 0.09, len: 0.3, vol: 0.18 });
 
@@ -232,4 +234,19 @@ export function inkBurst(x, y, color, count = 16) {
   }
   document.body.append(layer);
   setTimeout(() => layer.remove(), 900);
+}
+
+// Fala uma palavra em francês com a voz do iPhone.
+export function speakFr(text) {
+  try {
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'fr-FR';
+    u.rate = 0.9;
+    const v = synth.getVoices().find((x) => x.lang?.startsWith('fr'));
+    if (v) u.voice = v;
+    synth.speak(u);
+  } catch { /* sem voz disponível */ }
 }

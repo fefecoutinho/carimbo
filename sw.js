@@ -1,6 +1,6 @@
 // Guarda o app no iPhone para abrir rápido e funcionar sem internet.
 // Troque VERSION a cada atualização para o app baixar a versão nova.
-const VERSION = 'carimbo-1.3.1';
+const VERSION = 'carimbo-1.4.0';
 const ASSETS = [
   './',
   'index.html',
@@ -23,6 +23,10 @@ const ASSETS = [
   'js/screens/learn.js',
   'js/learn/conj.js',
   'js/learn/verbs.js',
+  'js/learn/words.js',
+  'js/learn/srs.js',
+  'js/learn/vocab.js',
+  'js/screens/vocab.js',
   'vendor/three.module.min.js',
   'vendor/three.core.min.js',
   'vendor/addons/RoundedBoxGeometry.js',

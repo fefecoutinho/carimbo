@@ -52,7 +52,12 @@ function freshData() {
 // Aprendizado (francês): dias praticados, acertos por tempo verbal e verbos que mais erro.
 export const DEFAULT_TENSES = ['PRESENT', 'PASSE_COMPOSE', 'IMPARFAIT', 'FUTUR', 'CONDITIONNEL_PRESENT', 'SUBJONCTIF_PRESENT'];
 function freshLearn() {
-  return { days: {}, stats: {}, miss: {}, best: 0, prefs: { tenses: [...DEFAULT_TENSES], mode: 'type' } };
+  return { days: {}, stats: {}, miss: {}, best: 0, prefs: { tenses: [...DEFAULT_TENSES], mode: 'type' }, vocab: freshVocab() };
+}
+
+// Vocabulário (cartas estilo Anki): estado de cada carta e quantas novas/revisões por dia.
+function freshVocab() {
+  return { cards: {}, daily: {}, prefs: { newPerDay: 10, speak: false } };
 }
 
 let data = load();
@@ -88,6 +93,11 @@ function normalizeLearn(l) {
     miss: l.miss || {},
     best: l.best || 0,
     prefs: { ...base.prefs, ...(l.prefs || {}) },
+    vocab: {
+      cards: l.vocab?.cards || {},
+      daily: l.vocab?.daily || {},
+      prefs: { ...base.vocab.prefs, ...(l.vocab?.prefs || {}) },
+    },
   };
 }
 
@@ -151,6 +161,30 @@ export function logAnswer(key, { tense, verb, ok }) {
 
 export function setBest(score) {
   if (score > data.learn.best) { data.learn.best = score; save(); }
+}
+
+export const vocab = () => data.learn.vocab;
+
+// Salva a carta respondida e conta o dia (aparece no calendário como dia de francês).
+export function saveVocabAnswer(key, id, card, { wasNew, ok, review }) {
+  const V = data.learn.vocab;
+  V.cards[id] = card;
+  const d = V.daily[key] || { new: 0, n: 0, ok: 0, rev: 0, revOk: 0 };
+  d.n++;
+  if (ok) d.ok++;
+  if (wasNew) d.new++;
+  if (review) { d.rev++; if (ok) d.revOk++; }
+  V.daily[key] = d;
+  const day = data.learn.days[key] || { n: 0, ok: 0 };
+  day.n++;
+  if (ok) day.ok++;
+  data.learn.days[key] = day;
+  save();
+}
+
+export function setVocabPref(name, value) {
+  data.learn.vocab.prefs[name] = value;
+  save();
 }
 
 export function setLearnPref(name, value) {

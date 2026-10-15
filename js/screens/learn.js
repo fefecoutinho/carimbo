@@ -3,6 +3,8 @@ import * as store from '../store.js';
 import { today } from '../dates.js';
 import { esc, toast } from '../ui.js';
 import { pop, haptic, inkBurst, success, fail, almost, fanfare } from '../fx.js';
+import { startVocab, renderVocab, vocabActive } from './vocab.js';
+import { counts as vocabCounts, deckStats } from '../learn/vocab.js';
 import { TENSES, makeQuestion, check, fullSentence, promptSubject, VERB_COUNT } from '../learn/conj.js';
 
 const ROUND = 10;
@@ -16,7 +18,8 @@ let tipTimer;
 export function renderLearn(el) {
   root = el;
   if (game && game.i >= ROUND) game = null;
-  if (game) renderGame();
+  if (vocabActive()) renderVocab(el);
+  else if (game) renderGame();
   else renderHome();
 }
 
@@ -32,6 +35,9 @@ function renderHome() {
   const d = store.learnDay(today());
   const on = new Set(L.prefs.tenses);
   const mode = L.prefs.mode;
+  const V = store.vocab();
+  const vc = vocabCounts(V, Date.now(), today());
+  const ds = deckStats(V, Date.now());
   root.innerHTML = `<section class="screen">
     <div class="topbar"><div class="eyebrow">Français 🇫🇷</div></div>
     <h1 class="h-display" style="font-size:clamp(34px,11vw,48px);margin:4px 0 14px">Aprender</h1>
@@ -48,13 +54,30 @@ function renderHome() {
       <span class="gc-play">JOGAR ▶</span>
     </button>
 
-    <div class="group-title">Tempos verbais</div>
+    <button class="game-card vocab" data-act="vocab">
+      <span class="gc-cards" aria-hidden="true"><i>le chat</i><i>o gato</i><i>la mer</i></span>
+      <span class="eyebrow">Jogo 2</span>
+      <span class="gc-title">Vocabulário</span>
+      <span class="gc-sub">Cartas que voltam na hora certa pra sua memória, como no Anki. ${ds.words} palavras mais usadas.</span>
+      <span class="gc-counts"><b class="vc new">${vc.news}</b> novas · <b class="vc lrn">${vc.learning}</b> aprendendo · <b class="vc rev">${vc.reviews}</b> revisões</span>
+      <span class="gc-play">${vc.news + vc.learning + vc.reviews ? 'ESTUDAR ▶' : 'TUDO EM DIA ✓'}</span>
+    </button>
+
+    <div class="group-title">Vocabulário · palavras novas por dia</div>
+    <div class="panel">
+      <div class="chips">${[5, 10, 15, 20, 30, 50].map((n) => `<button class="nchip ${V.prefs.newPerDay === n ? 'on' : ''}" data-newday="${n}">${n}</button>`).join('')}</div>
+      <p class="t-kind" style="margin:12px 2px 14px;font-weight:700;opacity:.8;line-height:1.45">As revisões do dia aparecem sempre, além das novas. Você já viu ${ds.seen} de ${ds.total} cartas (${ds.mature} já bem fixadas).</p>
+      <div class="trow" style="border:0;padding:0"><div class="grow"><div class="t-name">🔊 Falar o francês sozinho</div><div class="t-kind">Lê a palavra em voz alta quando aparece</div></div>
+        <button class="toggle ${V.prefs.speak ? 'on' : ''}" data-speakpref="1" aria-label="Falar automaticamente"></button></div>
+    </div>
+
+    <div class="group-title">Conjugaison · tempos verbais</div>
     <div class="panel">
       <div class="tense-chips">${Object.entries(TENSES).map(([id, t]) => `<button class="tchip ${on.has(id) ? 'on' : ''}" style="--c:${t.color}" data-tense="${id}">
         <b>${t.fr}</b><small>${t.pt} · ${t.ex}</small></button>`).join('')}</div>
     </div>
 
-    <div class="group-title">Como responder</div>
+    <div class="group-title">Conjugaison · como responder</div>
     <div class="panel">
       <div class="seg light">
         <button class="${mode === 'type' ? 'on' : ''}" data-mode="type">⌨️ Digitar</button>
@@ -64,13 +87,16 @@ function renderHome() {
         ? 'Você escreve a conjugação. Vale com ou sem o pronome, e tem uma barra de acentos pra ajudar.'
         : 'Você escolhe entre 4 opções. Mais rápido, bom pra revisar.'}</p>
     </div>
-    <p class="footer-note">Os verbos que você erra aparecem com mais frequência 😉<br>Mais jogos em breve.</p>
+    <p class="footer-note">No Conjugaison, os verbos que você erra aparecem com mais frequência 😉</p>
   </section>`;
 
   root.querySelector('.screen').addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
     if (b.dataset.act === 'play') { haptic(); startGame(); }
+    else if (b.dataset.act === 'vocab') { haptic(); pop(); startVocab(root, () => { renderHome(); window.scrollTo(0, 0); }); }
+    else if (b.dataset.newday) { store.setVocabPref('newPerDay', Number(b.dataset.newday)); pop(); haptic(); renderHome(); }
+    else if (b.dataset.speakpref) { store.setVocabPref('speak', !store.vocab().prefs.speak); pop(store.vocab().prefs.speak); haptic(); renderHome(); }
     else if (b.dataset.tense) {
       const set = new Set(store.learn().prefs.tenses);
       if (set.has(b.dataset.tense)) {
