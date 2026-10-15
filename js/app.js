@@ -38,6 +38,14 @@ function paintSky() {
 }
 
 const app = document.getElementById('app');
+const appbar = document.getElementById('appbar');
+
+// O fundo da barra aparece aos poucos conforme a tela rola.
+function updateBar() {
+  const p = Math.max(0, Math.min(1, window.scrollY / 60));
+  appbar.style.setProperty('--p', p.toFixed(3));
+}
+window.addEventListener('scroll', updateBar, { passive: true });
 const tabs = document.getElementById('tabs');
 
 function renderTabs() {
@@ -52,6 +60,7 @@ function render() {
   renderTabs();
   TABS.find((t) => t.id === nav.tab).render(app);
   if (changed) window.scrollTo(0, 0);
+  updateBar();
 }
 setRenderer(render);
 

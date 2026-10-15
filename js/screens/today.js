@@ -134,7 +134,7 @@ export function renderToday(el) {
   root = el;
   el.innerHTML = `<section class="screen">
     <div class="topbar">
-      <div class="wordmark"><span class="tag-mini">C</span>CARIMBO</div>
+      <span></span>
       <span class="pill streak"></span>
     </div>
     <div class="hero">
