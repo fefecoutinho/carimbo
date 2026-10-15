@@ -1,7 +1,7 @@
 // Tela "Mês": a folha do calendário, como a impressa.
 import * as store from '../store.js';
 import { today, addMonths, monthLabel, monthGrid, WEEKDAYS_SHORT, fmtNumber } from '../dates.js';
-import { esc, icons, handX } from '../ui.js';
+import { esc, icons, handX, openSheet, closeSheet, toast } from '../ui.js';
 import { pop, haptic } from '../fx.js';
 import { nav, go } from '../nav.js';
 
@@ -47,6 +47,35 @@ function summaryHTML(month) {
   }).join('');
 }
 
+const markedDays = (month) => Object.keys(store.getData().days).filter((k) => k.startsWith(`${month}-`)).length;
+
+function confirmClear(month, done) {
+  const { name, year } = monthLabel(month);
+  const n = markedDays(month);
+  openSheet(`<div class="sheet-head"><div class="icon">🗑️</div>
+      <div><h2>Limpar ${esc(name)}?</h2><div class="sub">${year}</div></div></div>
+    <p class="field-label" style="font-size:15px;line-height:1.45;margin-bottom:18px">
+      Isso apaga as marcações de <b>${n} ${n === 1 ? 'dia' : 'dias'}</b> de ${esc(name.toLowerCase())} (treino, peso, livros, kanji, eventos…). Seus marcadores continuam. <b>Não dá para desfazer</b> — se quiser garantir, exporte um backup em Ajustes antes.</p>
+    <button class="btn" data-act="yes" style="--c:#e0244a">APAGAR ${esc(name.toUpperCase())}</button>
+    <button class="btn ghost" data-act="no">Cancelar</button>`, {
+    color: '#e0244a',
+    onMount(sheet) {
+      sheet.addEventListener('click', (e) => {
+        const a = e.target.closest('[data-act]')?.dataset.act;
+        if (a === 'no') closeSheet();
+        else if (a === 'yes') {
+          store.clearMonth(month);
+          haptic(true);
+          pop(false);
+          closeSheet();
+          toast(`${name} limpo`);
+          done();
+        }
+      });
+    },
+  });
+}
+
 export function renderMonth(el) {
   const m = monthLabel(nav.month);
   const weeks = monthGrid(nav.month);
@@ -64,7 +93,10 @@ export function renderMonth(el) {
       <div class="cal-week">${WEEKDAYS_SHORT.map((w) => `<div class="cal-dow">${w}</div>`).join('')}</div>
       ${weeks.map((w) => `<div class="cal-week">${w.map(cellHTML).join('')}</div>`).join('')}
     </div>
-    ${nav.month !== today().slice(0, 7) ? '<div style="text-align:center;margin-top:18px"><button class="pill" data-act="now">Ir para o mês atual</button></div>' : ''}
+    <div class="month-foot">
+      ${nav.month !== today().slice(0, 7) ? '<button class="pill" data-act="now">Ir para o mês atual</button>' : ''}
+      ${markedDays(nav.month) ? '<button class="mini-link" data-act="clear">Limpar mês</button>' : ''}
+    </div>
   </section>`;
 
   const screen = el.querySelector('.screen');
@@ -82,6 +114,9 @@ export function renderMonth(el) {
       haptic();
       pop(act === 'next');
       renderMonth(el);
+    } else if (act === 'clear') {
+      haptic();
+      confirmClear(nav.month, () => renderMonth(el));
     } else if (act === 'now') {
       nav.month = today().slice(0, 7);
       renderMonth(el);

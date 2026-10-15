@@ -151,6 +151,16 @@ export function setEntry(key, trackerId, value) {
   save();
 }
 
+// Apaga todas as marcações de um mês ("AAAA-MM"). Os marcadores continuam.
+export function clearMonth(month) {
+  let n = 0;
+  for (const k of Object.keys(data.days)) {
+    if (k.startsWith(`${month}-`)) { delete data.days[k]; n++; }
+  }
+  if (n) save();
+  return n;
+}
+
 export function setPref(name, value) {
   data.prefs[name] = value;
   save();
