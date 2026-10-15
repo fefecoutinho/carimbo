@@ -96,7 +96,7 @@ function update(justId) {
   const isToday = nav.date === today();
   root.querySelector('[data-act=today]').style.visibility = isToday ? 'hidden' : 'visible';
   const s = streak();
-  const sp = root.querySelector('.streak');
+  const sp = document.getElementById('streak');
   sp.textContent = s ? `🔥 ${s} ${s === 1 ? 'dia' : 'dias'}` : '';
   sp.style.display = s ? '' : 'none';
 }
@@ -133,10 +133,6 @@ export function renderToday(el) {
   ensureScene();
   root = el;
   el.innerHTML = `<section class="screen">
-    <div class="topbar">
-      <span></span>
-      <span class="pill streak"></span>
-    </div>
     <div class="hero">
       <div class="hero-date"></div>
       <div class="hero-nav">

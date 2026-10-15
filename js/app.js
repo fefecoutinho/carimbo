@@ -58,6 +58,7 @@ function render() {
   const changed = shown !== nav.tab;
   shown = nav.tab;
   renderTabs();
+  if (nav.tab !== 'today') document.getElementById('streak').style.display = 'none';
   TABS.find((t) => t.id === nav.tab).render(app);
   if (changed) window.scrollTo(0, 0);
   updateBar();

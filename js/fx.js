@@ -92,14 +92,14 @@ export function swoosh() {
 
   const bp = ac.createBiquadFilter();
   bp.type = 'bandpass';
-  bp.Q.value = 1.4;
-  bp.frequency.setValueAtTime(380, t);
-  bp.frequency.exponentialRampToValueAtTime(3400, t + dur * 0.55);
-  bp.frequency.exponentialRampToValueAtTime(1200, t + dur);
+  bp.Q.value = 0.9;
+  bp.frequency.setValueAtTime(140, t);
+  bp.frequency.exponentialRampToValueAtTime(1000, t + dur * 0.55);
+  bp.frequency.exponentialRampToValueAtTime(380, t + dur);
 
   const g = ac.createGain();
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.55, t + dur * 0.4);
+  g.gain.exponentialRampToValueAtTime(0.9, t + dur * 0.4);
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   src.connect(bp).connect(g).connect(ac.destination);
   src.start(t);
@@ -108,10 +108,10 @@ export function swoosh() {
   const osc = ac.createOscillator();
   const og = ac.createGain();
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(1046, t + dur * 0.5);
-  osc.frequency.exponentialRampToValueAtTime(1568, t + dur * 0.8);
+  osc.frequency.setValueAtTime(330, t + dur * 0.5);
+  osc.frequency.exponentialRampToValueAtTime(494, t + dur * 0.8);
   og.gain.setValueAtTime(0.0001, t + dur * 0.5);
-  og.gain.exponentialRampToValueAtTime(0.12, t + dur * 0.6);
+  og.gain.exponentialRampToValueAtTime(0.16, t + dur * 0.6);
   og.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.15);
   osc.connect(og).connect(ac.destination);
   osc.start(t + dur * 0.5);
