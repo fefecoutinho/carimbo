@@ -118,6 +118,36 @@ export function swoosh() {
   osc.stop(t + dur + 0.2);
 }
 
+// Notas curtas e suaves (tom médio, nada agudo).
+function notes(freqs, { type = 'triangle', gap = 0.09, len = 0.22, vol = 0.22 } = {}) {
+  if (!prefs().sound) return;
+  const ac = ctx();
+  if (!ac) return;
+  const t0 = ac.currentTime;
+  freqs.forEach((f, i) => {
+    const t = t0 + i * gap;
+    const osc = ac.createOscillator();
+    const g = ac.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    osc.connect(g).connect(ac.destination);
+    osc.start(t);
+    osc.stop(t + len + 0.02);
+  });
+}
+
+// Acerto: arpejo subindo (sol – si – ré).
+export const success = () => notes([392, 494, 587, 784], { gap: 0.075, len: 0.28, vol: 0.2 });
+// Quase (só o acento): duas notas neutras.
+export const almost = () => notes([440, 523], { gap: 0.1, len: 0.22, vol: 0.18 });
+// Erro: duas notas graves descendo.
+export const fail = () => notes([220, 165], { type: 'sine', gap: 0.13, len: 0.3, vol: 0.32 });
+// Fim de rodada: fanfarra curtinha.
+export const fanfare = () => notes([392, 494, 587, 784, 587, 784], { gap: 0.09, len: 0.3, vol: 0.18 });
+
 // Vibração: no iPhone (Safari 18+) um <input switch> escondido dá um toque leve.
 let hapticLabel;
 export function haptic(strong = false) {

@@ -79,7 +79,18 @@ function cardsHTML(justId) {
       ${done ? '<div class="seal">✓</div>' : ''}
       <div><div class="name">${esc(t.name)}</div>${cardValue(t, v)}</div>
     </button>`;
-  }).join('') + '<button class="card add" data-act="new">+ Novo marcador</button>';
+  }).join('') + learnCardHTML() + '<button class="card add" data-act="new">+ Novo marcador</button>';
+}
+
+function learnCardHTML() {
+  const l = store.learnDay(nav.date);
+  return `<button class="card ${l ? 'done' : ''}" style="--c:#2f5bff" data-act="learn">
+    <div class="icon">🇫🇷</div>
+    ${l ? '<div class="seal">✓</div>' : ''}
+    <div><div class="name">Francês</div>${l
+      ? `<div class="val">${l.ok} de ${l.n} certas</div>`
+      : `<div class="val hint">${nav.date === today() ? 'Bora praticar?' : 'Não praticou nesse dia'}</div>`}</div>
+  </button>`;
 }
 
 function heroDateHTML() {
@@ -169,6 +180,7 @@ export function renderToday(el) {
       haptic();
       update();
     } else if (act === 'new') go('settings', { openNew: true });
+    else if (act === 'learn') { haptic(); pop(); go('learn'); }
   });
 
   // Arrastar para os lados na folha troca o dia.

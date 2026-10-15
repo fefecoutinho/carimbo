@@ -45,7 +45,14 @@ function freshData() {
     prefs: { sound: true, haptics: true },
     trackers: structuredClone(DEFAULT_TRACKERS),
     days: {},
+    learn: freshLearn(),
   };
+}
+
+// Aprendizado (francês): dias praticados, acertos por tempo verbal e verbos que mais erro.
+export const DEFAULT_TENSES = ['PRESENT', 'PASSE_COMPOSE', 'IMPARFAIT', 'FUTUR', 'CONDITIONNEL_PRESENT', 'SUBJONCTIF_PRESENT'];
+function freshLearn() {
+  return { days: {}, stats: {}, miss: {}, best: 0, prefs: { tenses: [...DEFAULT_TENSES], mode: 'type' } };
 }
 
 let data = load();
@@ -68,6 +75,19 @@ function normalize(d) {
     prefs: { ...base.prefs, ...(d.prefs || {}) },
     trackers: Array.isArray(d.trackers) ? d.trackers : base.trackers,
     days: d.days && typeof d.days === 'object' ? d.days : {},
+    learn: normalizeLearn(d.learn),
+  };
+}
+
+function normalizeLearn(l) {
+  const base = freshLearn();
+  if (!l || typeof l !== 'object') return base;
+  return {
+    days: l.days || {},
+    stats: l.stats || {},
+    miss: l.miss || {},
+    best: l.best || 0,
+    prefs: { ...base.prefs, ...(l.prefs || {}) },
   };
 }
 
@@ -106,7 +126,36 @@ export function hasEntry(t, value) {
 
 export function doneCount(key) {
   const d = day(key);
-  return data.trackers.filter((t) => hasEntry(t, d[t.id])).length;
+  return data.trackers.filter((t) => hasEntry(t, d[t.id])).length + (learnDay(key) ? 1 : 0);
+}
+
+// ---------- Aprendizado ----------
+
+export const learn = () => data.learn;
+export const learnDay = (key) => data.learn.days[key] || null;
+
+export function logAnswer(key, { tense, verb, ok }) {
+  const L = data.learn;
+  const d = L.days[key] || { n: 0, ok: 0 };
+  d.n++;
+  if (ok) d.ok++;
+  L.days[key] = d;
+  const s = L.stats[tense] || { n: 0, ok: 0 };
+  s.n++;
+  if (ok) s.ok++;
+  L.stats[tense] = s;
+  const m = L.miss[verb] || 0;
+  if (ok) { if (m > 1) L.miss[verb] = m - 1; else delete L.miss[verb]; } else L.miss[verb] = m + 1;
+  save();
+}
+
+export function setBest(score) {
+  if (score > data.learn.best) { data.learn.best = score; save(); }
+}
+
+export function setLearnPref(name, value) {
+  data.learn.prefs[name] = value;
+  save();
 }
 
 // Último valor registrado antes de uma data (ex.: peso de ontem para pré-preencher).
@@ -156,6 +205,9 @@ export function clearMonth(month) {
   let n = 0;
   for (const k of Object.keys(data.days)) {
     if (k.startsWith(`${month}-`)) { delete data.days[k]; n++; }
+  }
+  for (const k of Object.keys(data.learn.days)) {
+    if (k.startsWith(`${month}-`)) { delete data.learn.days[k]; n++; }
   }
   if (n) save();
   return n;

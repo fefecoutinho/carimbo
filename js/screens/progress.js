@@ -3,6 +3,7 @@ import * as store from '../store.js';
 import { today, addDays, parse, monthOf, shortDate, fmtNumber, MONTHS } from '../dates.js';
 import { esc } from '../ui.js';
 import { pop, haptic } from '../fx.js';
+import { TENSES } from '../learn/conj.js';
 
 const RANGES = [
   { id: '30', label: '30 dias', days: 30 },
@@ -168,6 +169,34 @@ function emptyPanel(t, msg) {
     <p class="empty">${esc(msg)}</p></div>`;
 }
 
+function learnPanel() {
+  const L = store.learn();
+  const days = Object.keys(L.days);
+  const head = `<div class="panel-head"><span class="icon">🇫🇷</span><h3>Francês</h3></div>`;
+  if (!days.length) return `<div class="panel">${head}<p class="empty">Jogue uma rodada na aba Aprender e seu progresso aparece aqui.</p></div>`;
+  const total = days.reduce((a, k) => a + L.days[k].n, 0);
+  const ok = days.reduce((a, k) => a + L.days[k].ok, 0);
+  const month = monthOf(today());
+  const inMonth = days.filter((k) => k.startsWith(month)).length;
+  const tenses = Object.keys(TENSES).filter((t) => L.stats[t]?.n);
+  const review = Object.entries(L.miss).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  return `<div class="panel">${head}
+    <div class="stat-row">
+      <div class="stat"><div class="v">${inMonth}</div><div class="k">dias em ${MONTHS[parse(today()).getMonth()].toLowerCase()}</div></div>
+      <div class="stat"><div class="v">${Math.round((ok / total) * 100)}<small>%</small></div><div class="k">de acerto</div></div>
+      <div class="stat"><div class="v">${total}</div><div class="k">respostas</div></div>
+    </div>
+    ${tenses.length ? `<div class="bars">${tenses.map((t) => {
+      const s = L.stats[t];
+      const pct = Math.round((s.ok / s.n) * 100);
+      return `<div class="bar learn-bar" style="--c:${TENSES[t].color}"><span>${esc(TENSES[t].fr)}</span>
+        <div class="track"><div class="fill" style="width:${pct}%"></div></div><span>${pct}%</span></div>`;
+    }).join('')}</div>` : ''}
+    ${review.length ? `<div class="field-label" style="color:rgba(255,255,255,.75);margin:16px 0 8px">Verbos pra revisar</div>
+      <div class="chips">${review.map(([v, n]) => `<span class="chip" style="background:rgba(255,255,255,.14);color:#fff">${esc(v)} <b style="opacity:.6">×${n}</b></span>`).join('')}</div>` : ''}
+  </div>`;
+}
+
 export function renderProgress(el) {
   const panels = store.trackers().map((t) => ({
     number: numberPanel, stamp: stampPanel, text: textPanel, book: bookPanel,
@@ -185,6 +214,7 @@ export function renderProgress(el) {
     <div class="topbar"><div class="eyebrow">Seu histórico</div></div>
     <h1 class="h-display" style="font-size:clamp(34px,11vw,48px);margin:4px 0 18px">Progresso</h1>
     ${out.join('')}
+    ${learnPanel()}
   </section>`;
 
   el.querySelector('.screen').addEventListener('click', (e) => {

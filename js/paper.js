@@ -1,6 +1,6 @@
 // Desenha a "folha do dia" num canvas: o número do dia, os carimbos, o peso,
 // o kanji, os livros e os eventos — como na folha de papel impressa.
-import { trackers, day, hasEntry } from './store.js';
+import { trackers, day, hasEntry, learnDay } from './store.js';
 import { parse, fmtNumber } from './dates.js';
 
 export const SIZE = 1024;
@@ -63,6 +63,12 @@ export function layout(key) {
   notes.forEach((t, i) => {
     marks.push({ kind: 'note', t, text: String(d[t.id]), x: 64, y: 730 + i * 96, w: 600, h: 84 });
   });
+
+  // Francês praticado: bandeirinha + placar embaixo à esquerda.
+  const l = learnDay(key);
+  if (l) {
+    marks.push({ kind: 'learn', t: { id: 'learn', color: '#2f5bff' }, text: `${l.ok}/${l.n}`, x: 64, y: Math.min(730 + notes.length * 96, 900), w: 300, h: 90 });
+  }
 
   // Números (peso) embaixo à direita.
   const nums = list.filter((t) => t.kind === 'number' && hasEntry(t, d[t.id]));
@@ -238,6 +244,14 @@ export function drawDay(ctx, key) {
       ctx.textBaseline = 'middle';
       fitText(ctx, m.text, m.w, 104, HAND);
       ctx.fillText(m.text, m.x + m.w, cy);
+    } else if (m.kind === 'learn') {
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.font = '72px "Apple Color Emoji", "Noto Color Emoji", system-ui, sans-serif';
+      ctx.fillText('🇫🇷', m.x, cy);
+      ctx.fillStyle = m.t.color;
+      ctx.font = `700 76px ${HAND}`;
+      ctx.fillText(m.text, m.x + 104, cy + 4);
     } else if (m.kind === 'book') {
       cloud(ctx, m.x + 20, m.y + 14, m.w - 40, m.h - 28, r);
       ctx.fillStyle = hexA(m.t.color, 0.1);

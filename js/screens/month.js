@@ -19,12 +19,13 @@ function cellHTML(c) {
   const big = ts.find((t) => t.kind === 'text' && t.style === 'big' && store.hasEntry(t, d[t.id]));
   const note = ts.find((t) => t.kind === 'text' && t.style !== 'big' && store.hasEntry(t, d[t.id]));
   const num = ts.find((t) => t.kind === 'number' && store.hasEntry(t, d[t.id]));
+  const learned = store.learnDay(c.key);
   const books = ts.filter((t) => t.kind === 'book' && store.hasEntry(t, d[t.id])).flatMap((t) => d[t.id]);
 
   const cls = ['cal-cell', c.inMonth ? '' : 'out', c.key === today() ? 'today' : ''].join(' ');
   return `<button class="${cls}" data-day="${c.key}" aria-label="Dia ${c.day}">
     <span class="n">${c.day}${cross ? handX(cross.color) : ''}</span>
-    ${tags.length ? `<span class="tags">${tags.slice(0, 4).join('')}</span>` : ''}
+    ${tags.length || learned ? `<span class="tags">${tags.slice(0, 4).join('')}${learned ? '<span class="fr-mini" title="Praticou francês">🇫🇷</span>' : ''}</span>` : ''}
     ${big ? `<span class="big" style="color:${esc(big.color)}">${esc(d[big.id])}</span>` : ''}
     ${books.length ? `<span class="book">${books.map((b) => (b.a === 'finish' ? '✅' : '📖')).join('')}</span>` : ''}
     ${note ? `<span class="note" style="--c:${esc(note.color)}">${esc(d[note.id])}</span>` : ''}
@@ -44,10 +45,16 @@ function summaryHTML(month) {
       txt = fin ? `${fin} lido${fin > 1 ? 's' : ''}` : `${withVal.length}`;
     } else txt = `${withVal.length} ${withVal.length === 1 ? 'dia' : 'dias'}`;
     return `<span class="pill">${esc(t.icon)} ${esc(txt.trim())}</span>`;
-  }).join('');
+  }).join('') + learnSummary(month);
 }
 
-const markedDays = (month) => Object.keys(store.getData().days).filter((k) => k.startsWith(`${month}-`)).length;
+function learnSummary(month) {
+  const n = Object.keys(store.learn().days).filter((k) => k.startsWith(`${month}-`)).length;
+  return n ? `<span class="pill">🇫🇷 ${n} ${n === 1 ? 'dia' : 'dias'}</span>` : '';
+}
+
+const markedDays = (month) => new Set([...Object.keys(store.getData().days), ...Object.keys(store.learn().days)]
+  .filter((k) => k.startsWith(`${month}-`))).size;
 
 function confirmClear(month, done) {
   const { name, year } = monthLabel(month);
@@ -55,7 +62,7 @@ function confirmClear(month, done) {
   openSheet(`<div class="sheet-head"><div class="icon">🗑️</div>
       <div><h2>Limpar ${esc(name)}?</h2><div class="sub">${year}</div></div></div>
     <p class="field-label" style="font-size:15px;line-height:1.45;margin-bottom:18px">
-      Isso apaga as marcações de <b>${n} ${n === 1 ? 'dia' : 'dias'}</b> de ${esc(name.toLowerCase())} (treino, peso, livros, kanji, eventos…). Seus marcadores continuam. <b>Não dá para desfazer</b> — se quiser garantir, exporte um backup em Ajustes antes.</p>
+      Isso apaga as marcações de <b>${n} ${n === 1 ? 'dia' : 'dias'}</b> de ${esc(name.toLowerCase())} (treino, peso, livros, francês, eventos…). Seus marcadores continuam. <b>Não dá para desfazer</b> — se quiser garantir, exporte um backup em Ajustes antes.</p>
     <button class="btn" data-act="yes" style="--c:#e0244a">APAGAR ${esc(name.toUpperCase())}</button>
     <button class="btn ghost" data-act="no">Cancelar</button>`, {
     color: '#e0244a',

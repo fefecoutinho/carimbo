@@ -8,10 +8,12 @@ import { renderToday, leaveToday } from './screens/today.js';
 import { renderMonth } from './screens/month.js';
 import { renderProgress } from './screens/progress.js';
 import { renderSettings } from './screens/settings.js';
+import { renderLearn, leaveLearn } from './screens/learn.js';
 
 const TABS = [
   { id: 'today', label: 'Hoje', icon: icons.today, render: renderToday },
   { id: 'month', label: 'Mês', icon: icons.month, render: renderMonth },
+  { id: 'learn', label: 'Aprender', icon: icons.learn, render: renderLearn },
   { id: 'progress', label: 'Progresso', icon: icons.progress, render: renderProgress },
   { id: 'settings', label: 'Ajustes', icon: icons.settings, render: renderSettings },
 ];
@@ -55,6 +57,7 @@ function renderTabs() {
 let shown = null;
 function render() {
   if (shown === 'today' && nav.tab !== 'today') leaveToday();
+  if (shown === 'learn' && nav.tab !== 'learn') leaveLearn();
   const changed = shown !== nav.tab;
   shown = nav.tab;
   renderTabs();
@@ -78,9 +81,9 @@ tabs.addEventListener('click', (e) => {
   render();
 });
 
-// A tela "Hoje" se atualiza sozinha; as outras são redesenhadas quando os dados mudam.
+// As telas "Hoje" e "Aprender" se atualizam sozinhas; as outras são redesenhadas quando os dados mudam.
 store.subscribe(() => {
-  if (nav.tab !== 'today') render();
+  if (nav.tab !== 'today' && nav.tab !== 'learn') render();
 });
 
 // Virou o dia com o app aberto: volta para a nova data.

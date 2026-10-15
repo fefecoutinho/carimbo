@@ -5,7 +5,7 @@ import { openEditor } from '../sheets.js';
 import { pop, haptic } from '../fx.js';
 import { nav } from '../nav.js';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 
