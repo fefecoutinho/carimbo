@@ -177,6 +177,7 @@ function bookSheet(key, t, onDone) {
   let ctrl = null;
   let timer = null;
   let saving = false;
+  let editing = -1;
 
   const coverThumb = (id) => {
     const src = coverSrc(id);
@@ -199,10 +200,15 @@ function bookSheet(key, t, onDone) {
     const reading = store.readingNow();
     const suggestions = action === 'finish' ? reading : [];
     sheet.innerHTML = `<div class="grab"></div>${head(t, key)}
-      ${events.length ? `<div class="field">${events.map((ev, i) => `<div class="list-row">
+      ${events.length ? `<div class="field">${events.map((ev, i) => (i === editing
+        ? `<div class="list-row">${coverThumb(ev.c)}
+          <input class="input edit-title" value="${esc(ev.t)}" maxlength="80" enterkeyhint="done" autocomplete="off" aria-label="Novo nome" style="min-height:44px;padding:6px 12px;font-size:16px">
+          <button class="x-btn" data-saveedit="${i}" aria-label="Salvar nome" style="background:var(--c);color:#fff">✓</button></div>`
+        : `<div class="list-row">
           ${coverThumb(ev.c)}
           <div class="grow">${ev.a === 'finish' ? 'Terminei' : 'Comecei'} <b>${esc(ev.t)}</b></div>
-          <button class="x-btn" data-del="${i}" aria-label="Remover">×</button></div>`).join('')}</div>` : ''}
+          <button class="x-btn" data-edit="${i}" aria-label="Editar nome">✎</button>
+          <button class="x-btn" data-del="${i}" aria-label="Remover">×</button></div>`)).join('')}</div>` : ''}
       <div class="field"><div class="seg">
         <button class="${action === 'start' ? 'on' : ''}" data-action="start">📖 Comecei</button>
         <button class="${action === 'finish' ? 'on' : ''}" data-action="finish">✅ Terminei</button>
@@ -255,9 +261,28 @@ function bookSheet(key, t, onDone) {
         search(sheet);
       });
       sheet.addEventListener('click', async (e) => {
-        const el = e.target.closest('[data-action],[data-del],[data-fill],[data-act],[data-cover]');
+        const el = e.target.closest('[data-action],[data-del],[data-fill],[data-act],[data-cover],[data-edit],[data-saveedit]');
         if (!el || saving) return;
-        if (el.dataset.cover !== undefined) {
+        if (el.dataset.edit !== undefined) {
+          editing = Number(el.dataset.edit);
+          render(sheet);
+          sheet.querySelector('.edit-title')?.focus();
+          pop();
+          haptic();
+        } else if (el.dataset.saveedit !== undefined) {
+          const i = Number(el.dataset.saveedit);
+          const name = sheet.querySelector('.edit-title').value.trim();
+          if (!name) { toast('O nome não pode ficar vazio'); return; }
+          if (name !== events[i].t) store.renameBook(events[i].t, name);
+          const fresh = store.entry(key, t.id) || [];
+          events.length = 0;
+          events.push(...fresh);
+          editing = -1;
+          render(sheet);
+          pop(true);
+          haptic(true);
+          onDone(t.id, false);
+        } else if (el.dataset.cover !== undefined) {
           const r = results[Number(el.dataset.cover)];
           selected = selected?.url === r.url ? null : r;
           refreshCovers(sheet);
@@ -302,7 +327,8 @@ function bookSheet(key, t, onDone) {
         }
       });
       sheet.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && e.target.matches('input')) { e.target.blur(); }
+        if (e.key === 'Enter' && e.target.matches('.edit-title')) sheet.querySelector('[data-saveedit]').click();
+        else if (e.key === 'Enter' && e.target.matches('input')) e.target.blur();
       });
     },
   });

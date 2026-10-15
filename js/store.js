@@ -250,6 +250,21 @@ export function clearMonth(month) {
   return n;
 }
 
+// Renomeia um livro em todos os dias (início e fim continuam ligados).
+export function renameBook(oldTitle, newTitle) {
+  const from = oldTitle.trim().toLowerCase();
+  let n = 0;
+  for (const t of data.trackers.filter((x) => x.kind === 'book')) {
+    for (const d of Object.values(data.days)) {
+      for (const ev of d[t.id] || []) {
+        if (ev.t.trim().toLowerCase() === from) { ev.t = newTitle; n++; }
+      }
+    }
+  }
+  if (n) save();
+  return n;
+}
+
 // Capas de livro guardadas no aparelho: { id: { t, a, src } }.
 export const cover = (id) => data.covers[id];
 export function setCover(id, value) {
