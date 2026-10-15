@@ -7,6 +7,7 @@ import { thump, haptic, inkBurst, pop, swoosh, whoomp } from '../fx.js';
 import { createStampScene, createFlatPaper } from '../scene.js';
 import { nav, go } from '../nav.js';
 import { themeById } from '../themes.js';
+import { onCoverReady } from '../covers.js';
 
 let canvas = null;
 let scene = null;
@@ -23,6 +24,7 @@ function ensureScene() {
     scene = createFlatPaper(canvas);
   }
   wireCanvas();
+  onCoverReady(() => scene.redraw());
   if (location.hostname === 'localhost') window.__scene = scene; // só para testes no computador
   // Fora do iPhone não precisa pedir permissão para o sensor de movimento.
   if (typeof window.DeviceOrientationEvent?.requestPermission !== 'function') startMotion();

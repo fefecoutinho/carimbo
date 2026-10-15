@@ -2,6 +2,7 @@
 // o kanji, os livros e os eventos — como na folha de papel impressa.
 import { trackers, day, hasEntry, learnDay } from './store.js';
 import { parse, fmtNumber } from './dates.js';
+import { coverImage } from './covers.js';
 
 export const SIZE = 1024;
 const INK = '#2b2640';
@@ -81,10 +82,25 @@ export function layout(key) {
   for (const t of list.filter((x) => x.kind === 'book' && hasEntry(x, d[x.id]))) {
     for (const ev of d[t.id]) bookEvents.push({ t, ev });
   }
-  bookEvents.slice(0, 2).forEach((b, i) => {
-    const h = bookEvents.length > 1 ? 100 : 170;
-    marks.push({ kind: 'book', t: b.t, ev: b.ev, x: 400, y: 50 + i * (h + 12), w: 570, h });
+  // Com capa: a capa é "colada" no canto de cima à direita. Sem capa: a nuvenzinha de antes.
+  const withCover = bookEvents.filter((b) => coverImage(b.ev.c)).slice(0, 2);
+  const noCover = bookEvents.filter((b) => !coverImage(b.ev.c)).slice(0, withCover.length ? 1 : 2);
+  const two = withCover.length > 1;
+  const cw = two ? 250 : 310;
+  const ch = Math.round(cw * 1.45);
+  withCover.forEach((b, i) => {
+    marks.push({ kind: 'cover', t: b.t, ev: b.ev, img: coverImage(b.ev.c), x: 1024 - 56 - cw - i * (cw + 18), y: 40, w: cw, h: ch });
   });
+  noCover.forEach((b, i) => {
+    const h = noCover.length > 1 || withCover.length ? 100 : 170;
+    const w = withCover.length ? 560 - withCover.length * 232 + 160 : 570;
+    marks.push({ kind: 'book', t: b.t, ev: b.ev, x: 400, y: 50 + i * (h + 12), w: Math.max(260, w), h });
+  });
+  // Capas ocupam o alto da direita: o texto grande (kanji) desce um pouco.
+  if (withCover.length) {
+    const top = 40 + ch + 30;
+    for (const m of marks) if (m.kind === 'big') { m.y = top + (m.y - 280) * ((690 - top) / 380); m.h *= (690 - top) / 380; }
+  }
 
   return { marks, crossBy };
 }
@@ -137,6 +153,62 @@ function handX(ctx, cx, cy, r, color, rand) {
   ctx.quadraticCurveTo(cx + j(), cy + j(), cx - r + j(), cy + r + j());
   ctx.stroke();
   ctx.restore();
+}
+
+// Capa colada como figurinha: borda branca, sombra e um selo carimbado por cima.
+function drawCover(ctx, m, rand) {
+  const pad = 10;
+  ctx.save();
+  ctx.shadowColor = 'rgba(40, 20, 0, 0.28)';
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetY = 8;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(m.x, m.y, m.w, m.h);
+  ctx.restore();
+
+  // Recorta a imagem para preencher o espaço sem distorcer.
+  const iw = m.img.naturalWidth;
+  const ih = m.img.naturalHeight;
+  const bw = m.w - pad * 2;
+  const bh = m.h - pad * 2;
+  const scale = Math.max(bw / iw, bh / ih);
+  const sw = bw / scale;
+  const sh = bh / scale;
+  ctx.drawImage(m.img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, m.x + pad, m.y + pad, bw, bh);
+
+  // Selo "COMECEI" / "LIDO ✓".
+  const done = m.ev.a === 'finish';
+  const color = done ? '#1fb36b' : m.t.color;
+  const label = done ? 'LIDO ✓' : 'COMECEI';
+  ctx.save();
+  const fs = Math.round(m.w * 0.15);
+  ctx.translate(m.x + m.w / 2, m.y + m.h - fs * 1.1);
+  ctx.rotate(-0.16 + (rand() - 0.5) * 0.08);
+  ctx.font = `900 ${fs}px ${BOLD}`;
+  const tw = ctx.measureText(label).width + fs;
+  const th = fs * 1.75;
+  ctx.fillStyle = 'rgba(251, 247, 238, 0.92)';
+  roundRect(ctx, -tw / 2, -th / 2, tw, th, 12);
+  ctx.fill();
+  ctx.lineWidth = fs * 0.2;
+  ctx.strokeStyle = color;
+  roundRect(ctx, -tw / 2, -th / 2, tw, th, 12);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, 0, 2);
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
 
 function fitText(ctx, text, maxW, size, family, weight = 700) {
@@ -252,6 +324,8 @@ export function drawDay(ctx, key) {
       ctx.fillStyle = m.t.color;
       ctx.font = `700 76px ${HAND}`;
       ctx.fillText(m.text, m.x + 104, cy + 4);
+    } else if (m.kind === 'cover') {
+      drawCover(ctx, m, r);
     } else if (m.kind === 'book') {
       cloud(ctx, m.x + 20, m.y + 14, m.w - 40, m.h - 28, r);
       ctx.fillStyle = hexA(m.t.color, 0.1);

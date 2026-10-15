@@ -46,6 +46,7 @@ function freshData() {
     trackers: structuredClone(DEFAULT_TRACKERS),
     days: {},
     learn: freshLearn(),
+    covers: {},
   };
 }
 
@@ -81,6 +82,7 @@ function normalize(d) {
     trackers: Array.isArray(d.trackers) ? d.trackers : base.trackers,
     days: d.days && typeof d.days === 'object' ? d.days : {},
     learn: normalizeLearn(d.learn),
+    covers: d.covers && typeof d.covers === 'object' ? d.covers : {},
   };
 }
 
@@ -207,8 +209,9 @@ export function books() {
       for (const ev of d[t.id] || []) {
         const name = ev.t.trim();
         const id = name.toLowerCase();
-        if (!map.has(id)) map.set(id, { title: name, start: null, finish: null });
+        if (!map.has(id)) map.set(id, { title: name, start: null, finish: null, c: null });
         const b = map.get(id);
+        if (ev.c) b.c = ev.c;
         if (ev.a === 'start' && (!b.start || k < b.start)) b.start = k;
         if (ev.a === 'finish' && (!b.finish || k > b.finish)) b.finish = k;
       }
@@ -245,6 +248,13 @@ export function clearMonth(month) {
   }
   if (n) save();
   return n;
+}
+
+// Capas de livro guardadas no aparelho: { id: { t, a, src } }.
+export const cover = (id) => data.covers[id];
+export function setCover(id, value) {
+  data.covers[id] = value;
+  save();
 }
 
 export function setPref(name, value) {

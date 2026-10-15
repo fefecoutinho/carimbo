@@ -3,6 +3,7 @@ import * as store from '../store.js';
 import { today, addMonths, monthLabel, monthGrid, WEEKDAYS_SHORT, fmtNumber } from '../dates.js';
 import { esc, icons, handX, openSheet, closeSheet, toast } from '../ui.js';
 import { pop, haptic } from '../fx.js';
+import { coverSrc } from '../covers.js';
 import { nav, go } from '../nav.js';
 
 function cellHTML(c) {
@@ -27,7 +28,9 @@ function cellHTML(c) {
     <span class="n">${c.day}${cross ? handX(cross.color) : ''}</span>
     ${tags.length || learned ? `<span class="tags">${tags.slice(0, 4).join('')}${learned ? '<span class="fr-mini" title="Praticou francês">🇫🇷</span>' : ''}</span>` : ''}
     ${big ? `<span class="big" style="color:${esc(big.color)}">${esc(d[big.id])}</span>` : ''}
-    ${books.length ? `<span class="book">${books.map((b) => (b.a === 'finish' ? '✅' : '📖')).join('')}</span>` : ''}
+    ${books.length ? `<span class="book">${books.map((b) => (coverSrc(b.c)
+      ? `<img class="cal-cover ${b.a}" src="${esc(coverSrc(b.c))}" alt="">`
+      : (b.a === 'finish' ? '✅' : '📖'))).join('')}</span>` : ''}
     ${note ? `<span class="note" style="--c:${esc(note.color)}">${esc(d[note.id])}</span>` : ''}
     ${num ? `<span class="num" style="color:${esc(num.color)}">${esc(fmtNumber(d[num.id], 1))}</span>` : ''}
   </button>`;

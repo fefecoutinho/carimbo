@@ -5,6 +5,7 @@ import { esc } from '../ui.js';
 import { pop, haptic } from '../fx.js';
 import { TENSES } from '../learn/conj.js';
 import { deckStats } from '../learn/vocab.js';
+import { coverSrc } from '../covers.js';
 
 const RANGES = [
   { id: '30', label: '30 dias', days: 30 },
@@ -158,6 +159,7 @@ function bookPanel(t) {
       <div class="stat"><div class="v">${store.readingNow().length}</div><div class="k">lendo agora</div></div>
     </div>
     ${sorted.slice(0, 12).map((b) => `<div class="book-row">
+      ${coverSrc(b.c) ? `<img class="b-cover" src="${esc(coverSrc(b.c))}" alt="">` : ''}
       <div><div class="b-title">${esc(b.title)}</div>
       <div class="b-dates">${b.start ? `de ${shortDate(b.start)}` : ''}${b.finish ? ` até ${shortDate(b.finish)}` : ''}</div></div>
       <span class="b-badge ${b.finish ? 'done' : ''}">${b.finish ? 'Lido ✓' : 'Lendo'}</span></div>`).join('')}

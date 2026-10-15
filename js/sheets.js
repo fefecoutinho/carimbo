@@ -2,6 +2,7 @@
 import * as store from './store.js';
 import { openSheet, closeSheet, esc, toast } from './ui.js';
 import { pop, haptic } from './fx.js';
+import { searchCovers, saveCover, coverSrc } from './covers.js';
 import { parse, today, addDays, WEEKDAYS, shortDate, fmtNumber, parseNumber } from './dates.js';
 
 export function dayLabel(key) {
@@ -169,13 +170,37 @@ function textSheet(key, t, onDone) {
 function bookSheet(key, t, onDone) {
   const events = [...(store.entry(key, t.id) || [])];
   let action = 'start';
+  let typed = '';
+  let results = [];
+  let selected = null; // { title, author, url } ou { id } de uma capa já salva
+  let searching = false;
+  let ctrl = null;
+  let timer = null;
+  let saving = false;
+
+  const coverThumb = (id) => {
+    const src = coverSrc(id);
+    return src ? `<img class="mini-cover" src="${esc(src)}" alt="">` : `<span>📖</span>`;
+  };
+
+  const coversHTML = () => {
+    if (typed.trim().length < 2) return '<p class="field-label" style="margin:0">Digite o nome e eu procuro a capa 🔎</p>';
+    if (searching && !results.length) return '<div class="cover-row">' + '<span class="cover-skel"></span>'.repeat(4) + '</div>';
+    if (!results.length) return '<p class="field-label" style="margin:0">Não achei capa pra esse nome. Tenta o título original ou com o autor — ou carimba sem capa mesmo.</p>';
+    return `<div class="cover-row">${results.map((r, i) => {
+      const on = selected && (selected.url ? selected.url === r.url : false);
+      return `<button class="cover-opt ${on ? 'on' : ''}" data-cover="${i}" aria-label="${esc(r.title)}">
+        <img src="${esc(r.url)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+        <span class="c-title">${esc(r.title)}</span><span class="c-author">${esc(r.author)}</span></button>`;
+    }).join('')}</div>`;
+  };
 
   const render = (sheet) => {
-    const reading = store.readingNow().map((b) => b.title);
+    const reading = store.readingNow();
     const suggestions = action === 'finish' ? reading : [];
     sheet.innerHTML = `<div class="grab"></div>${head(t, key)}
       ${events.length ? `<div class="field">${events.map((ev, i) => `<div class="list-row">
-          <span>${ev.a === 'finish' ? '✅' : '📖'}</span>
+          ${coverThumb(ev.c)}
           <div class="grow">${ev.a === 'finish' ? 'Terminei' : 'Comecei'} <b>${esc(ev.t)}</b></div>
           <button class="x-btn" data-del="${i}" aria-label="Remover">×</button></div>`).join('')}</div>` : ''}
       <div class="field"><div class="seg">
@@ -183,12 +208,36 @@ function bookSheet(key, t, onDone) {
         <button class="${action === 'finish' ? 'on' : ''}" data-action="finish">✅ Terminei</button>
       </div></div>
       <div class="field">
-        <input class="input" placeholder="Nome do livro" maxlength="80" enterkeyhint="done" autocomplete="off" aria-label="Nome do livro">
+        <input class="input" placeholder="Nome do livro" maxlength="80" enterkeyhint="done" autocomplete="off" aria-label="Nome do livro" value="${esc(typed)}">
       </div>
       ${suggestions.length ? `<div class="field"><div class="field-label">Lendo agora</div>
-        <div class="chips">${suggestions.map((s) => `<button class="chip" data-fill="${esc(s)}">${esc(s)}</button>`).join('')}</div></div>` : ''}
-      <button class="btn" data-act="add" style="--c:${esc(t.color)}">CARIMBAR</button>
+        <div class="chips">${suggestions.map((b) => `<button class="chip" data-fill="${esc(b.title)}" data-fillc="${esc(b.c || '')}">${esc(b.title)}</button>`).join('')}</div></div>` : ''}
+      <div class="field"><div class="field-label">Capa</div><div class="covers">${selected?.id ? `<div class="cover-row"><span class="cover-opt on"><img src="${esc(coverSrc(selected.id))}" alt=""><span class="c-title">${esc(typed)}</span></span></div>` : coversHTML()}</div></div>
+      <button class="btn" data-act="add" style="--c:${esc(t.color)}">${saving ? 'GUARDANDO A CAPA…' : 'CARIMBAR'}</button>
       ${events.length ? '<button class="btn ghost" data-act="close">Pronto</button>' : ''}`;
+  };
+
+  const refreshCovers = (sheet) => {
+    const box = sheet.querySelector('.covers');
+    if (box) box.innerHTML = coversHTML();
+  };
+
+  const search = (sheet) => {
+    clearTimeout(timer);
+    ctrl?.abort();
+    results = [];
+    if (typed.trim().length < 2) { searching = false; refreshCovers(sheet); return; }
+    searching = true;
+    refreshCovers(sheet);
+    timer = setTimeout(async () => {
+      ctrl = new AbortController();
+      const q = typed.trim();
+      const found = await searchCovers(q, ctrl.signal);
+      if (q !== typed.trim()) return;
+      results = found;
+      searching = false;
+      refreshCovers(sheet);
+    }, 450);
   };
 
   const commit = () => {
@@ -199,15 +248,24 @@ function bookSheet(key, t, onDone) {
     color: t.color,
     onMount(sheet) {
       render(sheet);
-      sheet.addEventListener('click', (e) => {
-        const el = e.target.closest('[data-action],[data-del],[data-fill],[data-act]');
-        if (!el) return;
-        const input = sheet.querySelector('input');
-        if (el.dataset.action) {
+      sheet.addEventListener('input', (e) => {
+        if (!e.target.matches('input')) return;
+        typed = e.target.value;
+        selected = null;
+        search(sheet);
+      });
+      sheet.addEventListener('click', async (e) => {
+        const el = e.target.closest('[data-action],[data-del],[data-fill],[data-act],[data-cover]');
+        if (!el || saving) return;
+        if (el.dataset.cover !== undefined) {
+          const r = results[Number(el.dataset.cover)];
+          selected = selected?.url === r.url ? null : r;
+          refreshCovers(sheet);
+          pop(!!selected);
+          haptic();
+        } else if (el.dataset.action) {
           action = el.dataset.action;
-          const typed = input.value;
           render(sheet);
-          sheet.querySelector('input').value = typed;
           pop();
           haptic();
         } else if (el.dataset.del !== undefined) {
@@ -218,12 +276,23 @@ function bookSheet(key, t, onDone) {
           haptic();
           onDone(t.id, false);
         } else if (el.dataset.fill) {
-          input.value = el.dataset.fill;
+          typed = el.dataset.fill;
+          selected = el.dataset.fillc ? { id: el.dataset.fillc } : null;
+          render(sheet);
+          if (!selected) search(sheet);
           pop();
         } else if (el.dataset.act === 'add') {
-          const title = input.value.trim();
+          const title = typed.trim();
           if (!title) { toast('Qual é o livro?'); return; }
-          events.push({ t: title, a: action });
+          let c = null;
+          if (selected?.id) c = selected.id;
+          else if (selected) {
+            saving = true;
+            render(sheet);
+            c = await saveCover(selected);
+            saving = false;
+          }
+          events.push(c ? { t: title, a: action, c } : { t: title, a: action });
           commit();
           haptic(true);
           closeSheet();
@@ -233,7 +302,7 @@ function bookSheet(key, t, onDone) {
         }
       });
       sheet.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && e.target.matches('input')) sheet.querySelector('[data-act=add]').click();
+        if (e.key === 'Enter' && e.target.matches('input')) { e.target.blur(); }
       });
     },
   });
