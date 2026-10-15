@@ -147,7 +147,7 @@ export function whoomp(open = true) {
   bp.frequency.setValueAtTime(open ? 1100 : 2600, t);
   bp.frequency.exponentialRampToValueAtTime(open ? 2600 : 1100, t + dur);
   const g = ac.createGain();
-  g.gain.value = 0.2;
+  g.gain.value = 0.1;
   src.connect(hp).connect(bp).connect(g).connect(ac.destination);
   src.start(t);
 
@@ -160,7 +160,7 @@ export function whoomp(open = true) {
     f.frequency.value = 3000 + Math.random() * 2500;
     f.Q.value = 1.2;
     const cg = ac.createGain();
-    cg.gain.value = 0.05 + Math.random() * 0.05;
+    cg.gain.value = 0.025 + Math.random() * 0.025;
     c.connect(f).connect(cg).connect(ac.destination);
     c.start(at);
   }
