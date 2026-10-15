@@ -3,7 +3,7 @@ import * as store from '../store.js';
 import { today, addDays, parse, WEEKDAYS, MONTHS, fmtNumber } from '../dates.js';
 import { esc, icons } from '../ui.js';
 import { openLog } from '../sheets.js';
-import { thump, haptic, inkBurst, pop } from '../fx.js';
+import { thump, haptic, inkBurst, pop, swoosh } from '../fx.js';
 import { createStampScene, createFlatPaper } from '../scene.js';
 import { nav, go } from '../nav.js';
 
@@ -169,6 +169,7 @@ export function renderToday(el) {
       const dir = nav.date < today() ? 1 : -1;
       nav.date = today();
       scene.setDay(nav.date, dir);
+      swoosh();
       haptic();
       update();
     } else if (act === 'new') go('settings', { openNew: true });

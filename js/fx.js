@@ -76,6 +76,48 @@ export function pop(up = true) {
   osc.stop(t + 0.1);
 }
 
+// "Swooosh" suave: ruído filtrado que sobe e desce, com um brilho no final.
+export function swoosh() {
+  if (!prefs().sound) return;
+  const ac = ctx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  const dur = 0.42;
+
+  const buf = ac.createBuffer(1, Math.ceil(ac.sampleRate * dur), ac.sampleRate);
+  const ch = buf.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+
+  const bp = ac.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.Q.value = 1.4;
+  bp.frequency.setValueAtTime(380, t);
+  bp.frequency.exponentialRampToValueAtTime(3400, t + dur * 0.55);
+  bp.frequency.exponentialRampToValueAtTime(1200, t + dur);
+
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.55, t + dur * 0.4);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(bp).connect(g).connect(ac.destination);
+  src.start(t);
+
+  // Pequeno "plim" no fim, para soar satisfatório.
+  const osc = ac.createOscillator();
+  const og = ac.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(1046, t + dur * 0.5);
+  osc.frequency.exponentialRampToValueAtTime(1568, t + dur * 0.8);
+  og.gain.setValueAtTime(0.0001, t + dur * 0.5);
+  og.gain.exponentialRampToValueAtTime(0.12, t + dur * 0.6);
+  og.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.15);
+  osc.connect(og).connect(ac.destination);
+  osc.start(t + dur * 0.5);
+  osc.stop(t + dur + 0.2);
+}
+
 // Vibração: no iPhone (Safari 18+) um <input switch> escondido dá um toque leve.
 let hapticLabel;
 export function haptic(strong = false) {
