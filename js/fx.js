@@ -118,47 +118,52 @@ export function swoosh() {
   osc.stop(t + dur + 0.2);
 }
 
-// "Vuum" grave e encorpado para a folha crescendo (open) ou voltando.
+// Vento leve batendo numa folha de papel: sopro suave + um farfalhar bem delicado.
 export function whoomp(open = true) {
   if (!prefs().sound) return;
   const ac = ctx();
   if (!ac) return;
   const t = ac.currentTime;
+  const dur = 0.55;
 
-  const osc = ac.createOscillator();
+  // Sopro: ruído com envelope em sino e um tremor leve, como ar passando pelo papel.
+  const len = Math.ceil(ac.sampleRate * dur);
+  const buf = ac.createBuffer(1, len, ac.sampleRate);
+  const ch = buf.getChannelData(0);
+  let flutter = 1;
+  for (let i = 0; i < len; i++) {
+    const p = i / len;
+    if (i % 260 === 0) flutter = 0.65 + Math.random() * 0.35;
+    ch[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * p) ** 1.6 * flutter;
+  }
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+  const hp = ac.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 500;
+  const bp = ac.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.Q.value = 0.6;
+  bp.frequency.setValueAtTime(open ? 1100 : 2600, t);
+  bp.frequency.exponentialRampToValueAtTime(open ? 2600 : 1100, t + dur);
   const g = ac.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(open ? 52 : 96, t);
-  osc.frequency.exponentialRampToValueAtTime(open ? 98 : 48, t + 0.32);
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.85, t + 0.04);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
-  osc.connect(g).connect(ac.destination);
-  osc.start(t);
-  osc.stop(t + 0.6);
+  g.gain.value = 0.2;
+  src.connect(hp).connect(bp).connect(g).connect(ac.destination);
+  src.start(t);
 
-  // Corpo do som: um sub-grave curtinho no começo.
-  const sub = ac.createOscillator();
-  const sg = ac.createGain();
-  sub.type = 'triangle';
-  sub.frequency.setValueAtTime(41, t);
-  sg.gain.setValueAtTime(0.0001, t);
-  sg.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
-  sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
-  sub.connect(sg).connect(ac.destination);
-  sub.start(t);
-  sub.stop(t + 0.32);
-
-  // Ar passando, bem abafado.
-  const n = noise(ac, 0.5);
-  const lp = ac.createBiquadFilter();
-  lp.type = 'lowpass';
-  lp.frequency.setValueAtTime(open ? 180 : 700, t);
-  lp.frequency.exponentialRampToValueAtTime(open ? 700 : 160, t + 0.4);
-  const ng = ac.createGain();
-  ng.gain.value = 0.35;
-  n.connect(lp).connect(ng).connect(ac.destination);
-  n.start(t);
+  // Farfalhar: alguns estalinhos de papel bem baixinhos.
+  for (let i = 0; i < 5; i++) {
+    const at = t + 0.08 + Math.random() * dur * 0.6;
+    const c = noise(ac, 0.025);
+    const f = ac.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 3000 + Math.random() * 2500;
+    f.Q.value = 1.2;
+    const cg = ac.createGain();
+    cg.gain.value = 0.05 + Math.random() * 0.05;
+    c.connect(f).connect(cg).connect(ac.destination);
+    c.start(at);
+  }
 }
 
 // Notas curtas e suaves (tom médio, nada agudo).

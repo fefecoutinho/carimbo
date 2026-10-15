@@ -328,16 +328,16 @@ export function createStampScene(canvas) {
       stamp.position.x = REST.x + zz * 8;
       stamp.position.y = REST.y + Math.sin(t * 1.7) * 0.09 + zz * 6;
       stamp.rotation.set(
-        -0.12 + Math.sin(t * 1.1) * 0.04 + spin.x + tilt.y * 0.15,
+        -0.12 + Math.sin(t * 1.1) * 0.04 + spin.x + tilt.y * 0.05,
         Math.sin(t * 0.6) * 0.35 + spin.y,
-        0.22 + Math.cos(t * 0.9) * 0.05 - tilt.x * 0.15,
+        0.22 + Math.cos(t * 0.9) * 0.05 - tilt.x * 0.05,
       );
     }
     const calm = 1 - zoom * 0.8;
     paper.rotation.set(
-      Math.sin(t * 0.8) * 0.025 * calm + tilt.y * 0.34,
-      tilt.x * 0.08,
-      Math.cos(t * 0.6) * 0.02 * calm - tilt.x * 0.34,
+      Math.sin(t * 0.8) * 0.025 * calm + tilt.y * 0.07,
+      tilt.x * 0.02,
+      Math.cos(t * 0.6) * 0.02 * calm - tilt.x * 0.07,
     );
     paper.position.y = Math.sin(t * 0.9) * 0.03 * calm - paperDip * 0.08;
 
@@ -348,7 +348,7 @@ export function createStampScene(canvas) {
     const z = ease.inOut(zoom);
     camPos.lerpVectors(camBase, zoomCam(), z);
     camera.position.set(
-      camPos.x + (Math.random() - 0.5) * shake * 0.12 + tilt.x * 0.35 * (1 - z),
+      camPos.x + (Math.random() - 0.5) * shake * 0.12 + tilt.x * 0.12 * (1 - z),
       camPos.y + (Math.random() - 0.5) * shake * 0.12,
       camPos.z,
     );

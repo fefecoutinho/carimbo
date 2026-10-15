@@ -52,7 +52,7 @@ function startMotion() {
     if (!baseTilt) baseTilt = { b: e.beta, g: e.gamma };
     baseTilt.b += (e.beta - baseTilt.b) * 0.008;
     baseTilt.g += (e.gamma - baseTilt.g) * 0.008;
-    scene.setTilt((e.gamma - baseTilt.g) / 22, (e.beta - baseTilt.b) / 22);
+    scene.setTilt((e.gamma - baseTilt.g) / 30, (e.beta - baseTilt.b) / 30);
   });
 }
 
