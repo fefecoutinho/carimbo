@@ -6,7 +6,7 @@ import { pop, haptic } from '../fx.js';
 import { nav } from '../nav.js';
 import { THEMES } from '../themes.js';
 
-export const VERSION = '1.2.0';
+export const VERSION = '1.3.0';
 
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 
@@ -70,6 +70,8 @@ export function renderSettings(el) {
         <button class="toggle ${p.sound ? 'on' : ''}" data-pref="sound" aria-label="Som"></button></div>
       <div class="trow"><div class="grow"><div class="t-name">📳 Vibração</div><div class="t-kind">Toque leve ao marcar</div></div>
         <button class="toggle ${p.haptics ? 'on' : ''}" data-pref="haptics" aria-label="Vibração"></button></div>
+      <div class="trow"><div class="grow"><div class="t-name">📱 Folha mexe com o celular</div><div class="t-kind">A folha da tela Hoje inclina junto com o iPhone</div></div>
+        <button class="toggle ${p.motion ? 'on' : ''}" data-pref="motion" aria-label="Folha mexe com o celular"></button></div>
     </div>
 
     <div class="group-title">Backup</div>

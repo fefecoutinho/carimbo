@@ -42,7 +42,7 @@ const DEFAULT_TRACKERS = [
 function freshData() {
   return {
     v: 1,
-    prefs: { sound: true, haptics: true, theme: 'ceu' },
+    prefs: { sound: true, haptics: true, theme: 'ceu', motion: true },
     trackers: structuredClone(DEFAULT_TRACKERS),
     days: {},
     learn: freshLearn(),

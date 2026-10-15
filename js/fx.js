@@ -118,6 +118,49 @@ export function swoosh() {
   osc.stop(t + dur + 0.2);
 }
 
+// "Vuum" grave e encorpado para a folha crescendo (open) ou voltando.
+export function whoomp(open = true) {
+  if (!prefs().sound) return;
+  const ac = ctx();
+  if (!ac) return;
+  const t = ac.currentTime;
+
+  const osc = ac.createOscillator();
+  const g = ac.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(open ? 52 : 96, t);
+  osc.frequency.exponentialRampToValueAtTime(open ? 98 : 48, t + 0.32);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.85, t + 0.04);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+  osc.connect(g).connect(ac.destination);
+  osc.start(t);
+  osc.stop(t + 0.6);
+
+  // Corpo do som: um sub-grave curtinho no começo.
+  const sub = ac.createOscillator();
+  const sg = ac.createGain();
+  sub.type = 'triangle';
+  sub.frequency.setValueAtTime(41, t);
+  sg.gain.setValueAtTime(0.0001, t);
+  sg.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
+  sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+  sub.connect(sg).connect(ac.destination);
+  sub.start(t);
+  sub.stop(t + 0.32);
+
+  // Ar passando, bem abafado.
+  const n = noise(ac, 0.5);
+  const lp = ac.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(open ? 180 : 700, t);
+  lp.frequency.exponentialRampToValueAtTime(open ? 700 : 160, t + 0.4);
+  const ng = ac.createGain();
+  ng.gain.value = 0.35;
+  n.connect(lp).connect(ng).connect(ac.destination);
+  n.start(t);
+}
+
 // Notas curtas e suaves (tom médio, nada agudo).
 function notes(freqs, { type = 'triangle', gap = 0.09, len = 0.22, vol = 0.22 } = {}) {
   if (!prefs().sound) return;

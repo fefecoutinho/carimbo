@@ -3,7 +3,7 @@ import * as store from '../store.js';
 import { today, addDays, parse, WEEKDAYS, MONTHS, fmtNumber } from '../dates.js';
 import { esc, icons } from '../ui.js';
 import { openLog } from '../sheets.js';
-import { thump, haptic, inkBurst, pop, swoosh } from '../fx.js';
+import { thump, haptic, inkBurst, pop, swoosh, whoomp } from '../fx.js';
 import { createStampScene, createFlatPaper } from '../scene.js';
 import { nav, go } from '../nav.js';
 import { themeById } from '../themes.js';
@@ -22,6 +22,129 @@ function ensureScene() {
     canvas.className = 'flat';
     scene = createFlatPaper(canvas);
   }
+  wireCanvas();
+  if (location.hostname === 'localhost') window.__scene = scene; // só para testes no computador
+  // Fora do iPhone não precisa pedir permissão para o sensor de movimento.
+  if (typeof window.DeviceOrientationEvent?.requestPermission !== 'function') startMotion();
+}
+
+// ---------- Folha que mexe com o celular ----------
+let motionAsked = false;
+let motionOn = false;
+let baseTilt = null;
+
+// No iPhone, o sensor só libera depois de um toque (o sistema pergunta uma vez).
+function askMotion() {
+  if (motionAsked || motionOn || !store.prefs().motion) return;
+  const DOE = window.DeviceOrientationEvent;
+  if (typeof DOE?.requestPermission !== 'function') return;
+  motionAsked = true;
+  DOE.requestPermission().then((s) => { if (s === 'granted') startMotion(); }).catch(() => {});
+}
+
+function startMotion() {
+  if (motionOn || !window.DeviceOrientationEvent) return;
+  motionOn = true;
+  window.addEventListener('deviceorientation', (e) => {
+    if (e.beta == null || !scene) return;
+    if (!store.prefs().motion) { scene.setTilt(0, 0); return; }
+    // A posição "neutra" acompanha devagar o jeito que você está segurando o celular.
+    if (!baseTilt) baseTilt = { b: e.beta, g: e.gamma };
+    baseTilt.b += (e.beta - baseTilt.b) * 0.008;
+    baseTilt.g += (e.gamma - baseTilt.g) * 0.008;
+    scene.setTilt((e.gamma - baseTilt.g) / 22, (e.beta - baseTilt.b) / 22);
+  });
+}
+
+// ---------- Toque na folha (zoom) e no carimbo (girar) ----------
+let gesture = null;
+let lastSpinAt = 0;
+let zoomed = false;
+let zoomBusy = false;
+let overlay = null;
+
+function wireCanvas() {
+  // Dedo no carimbo: não deixa a página rolar enquanto gira.
+  canvas.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    if (!zoomed && e.touches.length === 1 && scene.pick(t.clientX, t.clientY) === 'stamp') e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener('pointerdown', (e) => {
+    const hit = zoomed ? 'paper' : scene.pick(e.clientX, e.clientY);
+    gesture = { hit, x0: e.clientX, y0: e.clientY, moved: false };
+    if (hit === 'stamp' && !scene.isBusy()) {
+      scene.spinStart(e.clientX, e.clientY);
+      canvas.setPointerCapture?.(e.pointerId);
+      haptic();
+    }
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!gesture) return;
+    if (Math.hypot(e.clientX - gesture.x0, e.clientY - gesture.y0) > 10) gesture.moved = true;
+    if (gesture.hit === 'stamp') scene.spinMove(e.clientX, e.clientY);
+  });
+  const end = (e) => {
+    if (!gesture) return;
+    const g = gesture;
+    gesture = null;
+    if (e.type === 'pointerup') askMotion();
+    if (g.hit === 'stamp') {
+      lastSpinAt = performance.now();
+      if (scene.spinEnd() > 8) pop();
+      return;
+    }
+    if (e.type === 'pointerup' && !g.moved && g.hit === 'paper') toggleZoom();
+  };
+  canvas.addEventListener('pointerup', end);
+  canvas.addEventListener('pointercancel', end);
+}
+
+function toggleZoom() {
+  if (zoomBusy || scene.isBusy()) return;
+  zoomBusy = true;
+  if (zoomed) closeZoom();
+  else openZoom();
+}
+
+function openZoom() {
+  const r = canvas.getBoundingClientRect();
+  overlay = document.createElement('div');
+  overlay.className = 'paper-zoom';
+  document.body.append(overlay);
+  Object.assign(canvas.style, {
+    position: 'fixed', inset: 'auto', left: `${r.left}px`, top: `${r.top}px`,
+    width: `${r.width}px`, height: `${r.height}px`, zIndex: '46',
+  });
+  document.body.append(canvas);
+  canvas.getBoundingClientRect();
+  canvas.classList.add('zooming');
+  requestAnimationFrame(() => {
+    Object.assign(canvas.style, { left: '0px', top: '0px', width: '100vw', height: '100dvh' });
+    overlay.classList.add('show');
+  });
+  zoomed = true;
+  whoomp(true);
+  haptic(true);
+  scene.setZoom(true).then(() => { zoomBusy = false; });
+}
+
+function closeZoom() {
+  const hero = root?.querySelector('.hero');
+  const r = hero?.getBoundingClientRect();
+  if (r) Object.assign(canvas.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+  overlay?.classList.remove('show');
+  whoomp(false);
+  haptic();
+  scene.setZoom(false).then(() => {
+    canvas.classList.remove('zooming');
+    canvas.removeAttribute('style');
+    if (hero?.isConnected) hero.prepend(canvas);
+    overlay?.remove();
+    overlay = null;
+    zoomed = false;
+    zoomBusy = false;
+  });
 }
 
 export function leaveToday() {
@@ -164,6 +287,7 @@ export function renderToday(el) {
   update();
 
   el.querySelector('.screen').addEventListener('click', (e) => {
+    askMotion();
     const card = e.target.closest('[data-t]');
     if (card) {
       haptic();
@@ -191,6 +315,7 @@ export function renderToday(el) {
   hero.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
   hero.addEventListener('touchend', (e) => {
     if (sx === null) return;
+    if (zoomed || performance.now() - lastSpinAt < 400) { sx = null; return; }
     const dx = e.changedTouches[0].clientX - sx;
     const dy = e.changedTouches[0].clientY - sy;
     sx = null;

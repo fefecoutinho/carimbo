@@ -247,11 +247,16 @@ export function createStampScene(canvas) {
   async function stampIt(key, trackerId, color, onImpact) {
     if (busy) { currentKey = key; redraw(); onImpact?.(null); return; }
     busy = true;
+    spin.y %= Math.PI * 2;
+    spin.vy = 0;
+    spin.dragging = false;
     setInk(color);
     const target = worldFromAnchor(anchorFor(key, trackerId));
     const above = target.clone().setY(1.35);
     const from = stamp.position.clone();
     const fromRot = stamp.rotation.clone();
+    spin.y = 0;
+    spin.x = 0;
 
     await tween(300, (t) => {
       stamp.position.lerpVectors(from, above, t);
@@ -306,23 +311,49 @@ export function createStampScene(canvas) {
       const blink = (t % 4.2) < 0.12 ? 0.1 : 1;
       eyes.scale.set(1, blink, 1);
     }
-    if (!busy) {
-      stamp.position.y = REST.y + Math.sin(t * 1.7) * 0.09;
-      stamp.rotation.set(-0.12 + Math.sin(t * 1.1) * 0.04, Math.sin(t * 0.6) * 0.35, 0.22 + Math.cos(t * 0.9) * 0.05);
+    // Inclinação do celular, suavizada.
+    const k = Math.min(1, dt * 7);
+    tilt.x += (tiltTarget.x - tilt.x) * k;
+    tilt.y += (tiltTarget.y - tilt.y) * k;
+
+    // Giro do carimbo com o dedo, com inércia.
+    if (!spin.dragging) {
+      spin.y += spin.vy * dt;
+      spin.vy *= Math.pow(0.05, dt);
+      spin.x += -spin.x * Math.min(1, dt * 3);
     }
-    paper.rotation.set(Math.sin(t * 0.8) * 0.025, 0, Math.cos(t * 0.6) * 0.02);
-    paper.position.y = Math.sin(t * 0.9) * 0.03 - paperDip * 0.08;
+
+    if (!busy) {
+      const zz = ease.inOut(zoom);
+      stamp.position.x = REST.x + zz * 8;
+      stamp.position.y = REST.y + Math.sin(t * 1.7) * 0.09 + zz * 6;
+      stamp.rotation.set(
+        -0.12 + Math.sin(t * 1.1) * 0.04 + spin.x + tilt.y * 0.15,
+        Math.sin(t * 0.6) * 0.35 + spin.y,
+        0.22 + Math.cos(t * 0.9) * 0.05 - tilt.x * 0.15,
+      );
+    }
+    const calm = 1 - zoom * 0.8;
+    paper.rotation.set(
+      Math.sin(t * 0.8) * 0.025 * calm + tilt.y * 0.34,
+      tilt.x * 0.08,
+      Math.cos(t * 0.6) * 0.02 * calm - tilt.x * 0.34,
+    );
+    paper.position.y = Math.sin(t * 0.9) * 0.03 * calm - paperDip * 0.08;
 
     squash = Math.max(0, squash - dt * 6);
     stamp.scale.set(1 + squash * 0.06, 1 - squash * 0.12, 1 + squash * 0.06);
     paperDip = Math.max(0, paperDip - dt * 5);
     shake = Math.max(0, shake - dt * 4);
+    const z = ease.inOut(zoom);
+    camPos.lerpVectors(camBase, zoomCam(), z);
     camera.position.set(
-      camBase.x + (Math.random() - 0.5) * shake * 0.12,
-      camBase.y + (Math.random() - 0.5) * shake * 0.12,
-      camBase.z,
+      camPos.x + (Math.random() - 0.5) * shake * 0.12 + tilt.x * 0.35 * (1 - z),
+      camPos.y + (Math.random() - 0.5) * shake * 0.12,
+      camPos.z,
     );
-    camera.lookAt(lookAt);
+    lookCur.lerpVectors(lookAt, ZOOM_LOOK, z);
+    camera.lookAt(lookCur);
 
     renderer.render(scene, camera);
     if (active) raf = requestAnimationFrame(frame);
@@ -330,6 +361,78 @@ export function createStampScene(canvas) {
 
   function wake() {
     if (!raf && active) raf = requestAnimationFrame(frame);
+  }
+
+  // ---------- Interação: inclinação, zoom e giro ----------
+  const tilt = { x: 0, y: 0 };
+  const tiltTarget = { x: 0, y: 0 };
+  const spin = { x: 0, y: 0, vy: 0, dragging: false, lx: 0, ly: 0, lt: 0 };
+  let zoom = 0;
+  const camPos = new THREE.Vector3();
+  const lookCur = new THREE.Vector3();
+  const ZOOM_LOOK = new THREE.Vector3(0, 0, 0);
+  const zc = new THREE.Vector3();
+
+  // Câmera quase de cima, longe o bastante para a folha ocupar quase a tela toda.
+  function zoomCam() {
+    const tan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const dW = (P / 0.9) / (2 * tan * camera.aspect);
+    const dH = (P / 0.82) / (2 * tan);
+    const d = Math.max(dW, dH);
+    return zc.set(0, d * 0.985, d * 0.17);
+  }
+
+  // x/y entre -1 e 1 (esquerda/direita, frente/trás).
+  function setTilt(x, y) {
+    tiltTarget.x = Math.max(-1, Math.min(1, x));
+    tiltTarget.y = Math.max(-1, Math.min(1, y));
+    wake();
+  }
+
+  function setZoom(on, duration = 650) {
+    const from = zoom;
+    const to = on ? 1 : 0;
+    return tween(duration, (t) => { zoom = from + (to - from) * t; }, (t) => t);
+  }
+
+  // O que está embaixo do dedo: 'stamp', 'paper' ou null.
+  const ray = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  function pick(x, y) {
+    const r = canvas.getBoundingClientRect();
+    ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    if (zoom < 0.5 && ray.intersectObject(stamp, true).length) return 'stamp';
+    if (ray.intersectObject(paper, true).length) return 'paper';
+    return null;
+  }
+
+  function spinStart(x, y) {
+    spin.dragging = true;
+    spin.vy = 0;
+    spin.lx = x;
+    spin.ly = y;
+    spin.lt = performance.now();
+    wake();
+  }
+  function spinMove(x, y) {
+    if (!spin.dragging) return;
+    const now = performance.now();
+    const dx = x - spin.lx;
+    const dy = y - spin.ly;
+    const dt = Math.max(1, now - spin.lt) / 1000;
+    spin.y += dx * 0.014;
+    spin.vy = spin.vy * 0.5 + ((dx * 0.014) / dt) * 0.5;
+    spin.x = Math.max(-0.9, Math.min(0.9, spin.x + dy * 0.008));
+    spin.lx = x;
+    spin.ly = y;
+    spin.lt = now;
+  }
+  function spinEnd() {
+    if (!spin.dragging) return 0;
+    spin.dragging = false;
+    if (performance.now() - spin.lt > 80) spin.vy = 0;
+    return Math.abs(spin.vy);
   }
 
   function resize() {
@@ -356,7 +459,10 @@ export function createStampScene(canvas) {
   document.addEventListener('visibilitychange', () => setActive(wanted));
   setActive(true);
 
-  return { setDay, stamp: stampIt, redraw, setActive, setLook, isBusy: () => busy };
+  return {
+    setDay, stamp: stampIt, redraw, setActive, setLook, setTilt, setZoom, pick, spinStart, spinMove, spinEnd,
+    isBusy: () => busy, isZoomed: () => zoom > 0,
+  };
 }
 
 // Sem WebGL: mostra a folha desenhada em 2D.
@@ -376,6 +482,13 @@ export function createFlatPaper(canvas) {
     redraw,
     setActive() {},
     setLook() {},
+    setTilt() {},
+    setZoom() { return Promise.resolve(); },
+    pick: () => 'paper',
+    spinStart() {},
+    spinMove() {},
+    spinEnd: () => 0,
+    isZoomed: () => false,
     isBusy: () => false,
   };
 }
