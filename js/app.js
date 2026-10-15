@@ -56,26 +56,27 @@ window.addEventListener('scroll', updateBar, { passive: true });
 const tabs = document.getElementById('tabs');
 
 // Barra de abas (vidro líquido): criada uma vez, com uma "lente" que desliza até a aba atual.
-tabs.innerHTML = '<span class="lens"></span>' + TABS.map((t) => `<button data-tab="${t.id}" aria-label="${t.label}">${t.icon}<span>${t.label}</span></button>`).join('');
+tabs.innerHTML = '<span class="lens" aria-hidden="true"></span>' + TABS.map((t) => `<button data-tab="${t.id}" aria-label="${t.label}">${t.icon}<span>${t.label}</span></button>`).join('');
 const lens = tabs.querySelector('.lens');
 const tabBtns = [...tabs.querySelectorAll('button')];
-let dragX = null;
+const PAD = 6;
 
-function placeLens() {
+// Posição da lente: na aba ativa, ou seguindo o dedo enquanto arrasta.
+function placeLens(fingerX = null) {
   const btn = tabBtns.find((b) => b.dataset.tab === nav.tab);
   if (!btn) return;
-  lens.style.width = `${btn.offsetWidth}px`;
-  const x = dragX !== null
-    ? Math.max(0, Math.min(tabs.clientWidth - btn.offsetWidth - 12, dragX - btn.offsetWidth / 2 - 6)) + 6
-    : btn.offsetLeft;
-  lens.style.transform = `translateX(${x}px)`;
+  const w = btn.offsetWidth;
+  let x = btn.offsetLeft;
+  if (fingerX !== null) x = Math.max(PAD, Math.min(tabs.clientWidth - PAD - w, fingerX - w / 2));
+  lens.style.width = `${w}px`;
+  lens.style.transform = `translateX(${x}px) scale(${fingerX !== null ? 1.12 : 1})`;
 }
 
 function renderTabs() {
   for (const b of tabBtns) b.classList.toggle('on', b.dataset.tab === nav.tab);
   placeLens();
 }
-window.addEventListener('resize', placeLens);
+window.addEventListener('resize', () => placeLens());
 
 let shown = null;
 function render() {
@@ -91,9 +92,9 @@ function render() {
 }
 setRenderer(render);
 
-function selectTab(id, { drag = false } = {}) {
+function selectTab(id) {
   if (id === nav.tab) {
-    if (!drag && id === 'today') window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (id === 'today') window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
   pop();
@@ -102,43 +103,73 @@ function selectTab(id, { drag = false } = {}) {
   render();
 }
 
-// Toque numa aba, ou segure e arraste o dedo pela barra para passar de uma aba a outra.
-let pressing = false;
-const tabAt = (x) => {
-  const r = tabs.getBoundingClientRect();
-  const rel = Math.max(0, Math.min(r.width - 1, x - r.left));
-  // A aba mais próxima do dedo (assim as frestas entre as abas não atrapalham).
-  return tabBtns.reduce((best, b) => (Math.abs(rel - (b.offsetLeft + b.offsetWidth / 2)) < Math.abs(rel - (best.offsetLeft + best.offsetWidth / 2)) ? b : best));
+// Toque numa aba, ou segure e arraste pela barra: a lente segue o dedo e a aba abre ao soltar.
+const drag = { on: false, id: null, hover: null };
+const fingerX = (clientX) => clientX - tabs.getBoundingClientRect().left - tabs.clientLeft;
+const tabAt = (clientX) => {
+  const x = fingerX(clientX);
+  // A aba mais próxima do dedo (as frestas entre as abas não atrapalham).
+  return tabBtns.reduce((best, b) => (Math.abs(x - (b.offsetLeft + b.offsetWidth / 2)) < Math.abs(x - (best.offsetLeft + best.offsetWidth / 2)) ? b : best));
 };
-tabs.addEventListener('pointerdown', (e) => {
-  if (e.button > 0) return;
-  pressing = true;
-  tabs.setPointerCapture?.(e.pointerId);
-  tabs.classList.add('dragging');
-  dragX = e.clientX - tabs.getBoundingClientRect().left;
-  selectTab(tabAt(e.clientX).dataset.tab, { drag: true });
-  placeLens();
-});
-tabs.addEventListener('pointermove', (e) => {
-  if (!pressing) return;
-  dragX = e.clientX - tabs.getBoundingClientRect().left;
-  selectTab(tabAt(e.clientX).dataset.tab, { drag: true });
-  placeLens();
-});
-const release = (e) => {
-  if (!pressing) return;
-  pressing = false;
-  dragX = null;
-  tabs.classList.remove('dragging');
-  placeLens();
-  if (e.type === 'pointerup' && nav.tab === 'today' && tabAt(e.clientX).dataset.tab === 'today' && window.scrollY > 0) {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+function dragMove(clientX) {
+  const b = tabAt(clientX);
+  if (b.dataset.tab !== drag.hover) {
+    if (drag.hover) haptic(); // um toquinho ao passar por cada aba
+    drag.hover = b.dataset.tab;
+    for (const x of tabBtns) x.classList.toggle('hover', x === b);
   }
-};
-tabs.addEventListener('pointerup', release);
-tabs.addEventListener('pointercancel', release);
+  placeLens(fingerX(clientX));
+}
+
+function dragStart(id, clientX) {
+  drag.on = true;
+  drag.id = id;
+  drag.hover = null;
+  tabs.classList.add('dragging');
+  dragMove(clientX);
+}
+
+function dragEnd(commit) {
+  if (!drag.on) return;
+  drag.on = false;
+  drag.id = null;
+  tabs.classList.remove('dragging');
+  for (const x of tabBtns) x.classList.remove('hover');
+  const target = drag.hover;
+  drag.hover = null;
+  placeLens();
+  if (commit && target) selectTab(target);
+}
+
+// iPhone: eventos de toque (mais confiáveis que os de ponteiro numa barra fixa).
+tabs.addEventListener('touchstart', (e) => {
+  if (drag.on || e.touches.length !== 1) return;
+  e.preventDefault();
+  dragStart(e.touches[0].identifier, e.touches[0].clientX);
+}, { passive: false });
+tabs.addEventListener('touchmove', (e) => {
+  const t = [...e.changedTouches].find((x) => x.identifier === drag.id);
+  if (!drag.on || !t) return;
+  e.preventDefault();
+  dragMove(t.clientX);
+}, { passive: false });
+window.addEventListener('touchend', (e) => {
+  if (drag.on && [...e.changedTouches].some((x) => x.identifier === drag.id)) dragEnd(true);
+});
+window.addEventListener('touchcancel', () => dragEnd(false));
+
+// Mouse (computador).
+tabs.addEventListener('mousedown', (e) => { if (e.button === 0) dragStart('mouse', e.clientX); });
+window.addEventListener('mousemove', (e) => { if (drag.on && drag.id === 'mouse') dragMove(e.clientX); });
+window.addEventListener('mouseup', () => { if (drag.id === 'mouse') dragEnd(true); });
+
+// Se o app perder o foco no meio do gesto, a barra nunca fica presa.
+window.addEventListener('blur', () => dragEnd(false));
+document.addEventListener('visibilitychange', () => dragEnd(false));
 tabs.addEventListener('contextmenu', (e) => e.preventDefault());
-// Teclado / leitor de tela (clique sem ponteiro).
+
+// Teclado / leitor de tela.
 tabs.addEventListener('click', (e) => {
   const b = e.target.closest('[data-tab]');
   if (b && e.detail === 0) selectTab(b.dataset.tab);
