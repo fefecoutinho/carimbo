@@ -5,7 +5,7 @@ import { esc, toast } from '../ui.js';
 import { pop, haptic, inkBurst, success, fail, almost, fanfare } from '../fx.js';
 import { startVocab, renderVocab, vocabActive } from './vocab.js';
 import { counts as vocabCounts, deckStats } from '../learn/vocab.js';
-import { TENSES, makeQuestion, check, fullSentence, promptSubject, VERB_COUNT } from '../learn/conj.js';
+import { TENSES, makeQuestion, check, fullSentence, promptSubject, VERB_COUNT, diagnose } from '../learn/conj.js';
 
 const ROUND = 10;
 const ACCENTS = ['é', 'è', 'ê', 'à', 'â', 'ç', 'ë', 'î', 'ï', 'ô', 'û', 'ù', 'œ', "'"];
@@ -233,7 +233,8 @@ function answer(value, chosenBtn) {
   const res = game.mode === 'choice' ? (value === q.answers[0] ? 'ok' : 'wrong') : check(q, value);
   const ok = res !== 'wrong';
   game.answered = true;
-  game.results.push({ q, res, input: value });
+  const why = res === 'wrong' && value.trim() ? diagnose(q, value) : null;
+  game.results.push({ q, res, input: value, why });
 
   const firstToday = !store.learnDay(today());
   store.logAnswer(today(), { tense: q.tense, verb: q.verb, ok });
@@ -261,7 +262,8 @@ function answer(value, chosenBtn) {
     haptic();
   } else {
     reveal.innerHTML = `<div class="label">Resposta certa</div><div class="right">${full(q.answers[0])}</div>${alt}
-      ${value ? `<div class="yours">você: <s>${esc(value)}</s></div>` : ''}`;
+      ${value ? `<div class="yours">você: <s>${esc(value)}</s></div>` : ''}
+      ${why ? `<div class="why ${why.known ? '' : 'fun'}"><span>${why.known ? '💡' : '🤷'}</span><p>${esc(why.msg)}</p></div>` : ''}`;
     fail();
     haptic(true);
   }
@@ -316,10 +318,11 @@ function renderSummary() {
       <div class="dots big">${dotsHTML()}</div>
     </div>
     ${misses.length ? `<div class="group-title">Pra revisar</div>
-      <div class="panel">${misses.map(({ q, input }) => `<div class="miss-row">
+      <div class="panel">${misses.map(({ q, input, why }) => `<div class="miss-row">
         <span class="mini-chip" style="--c:${TENSES[q.tense].color}">${TENSES[q.tense].fr}</span>
         <div class="grow"><div class="m-right">${esc(fullSentence(q.subject, q.tense, q.answers[0]))}</div>
-        <div class="m-meta">${esc(q.verb)} = ${esc(q.pt)}${input ? ` · você: <s>${esc(input)}</s>` : ''}</div></div></div>`).join('')}</div>` : ''}
+        <div class="m-meta">${esc(q.verb)} = ${esc(q.pt)}${input ? ` · você: <s>${esc(input)}</s>` : ''}</div>
+        ${why?.known ? `<div class="m-why">💡 ${esc(why.msg)}</div>` : ''}</div></div>`).join('')}</div>` : ''}
     <button class="btn" data-act="again" style="--c:#2f5bff;margin-top:18px">JOGAR DE NOVO</button>
     <button class="btn ghost" data-act="home" style="color:rgba(255,255,255,.8)">Voltar</button>
   </section>`;
