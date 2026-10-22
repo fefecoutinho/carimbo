@@ -3,6 +3,7 @@
 import { trackers, day, hasEntry, learnDay } from './store.js';
 import { parse, fmtNumber } from './dates.js';
 import { coverImage } from './covers.js';
+import { offDay } from './holidays.js';
 
 export const SIZE = 1024;
 const INK = '#2b2640';
@@ -269,7 +270,34 @@ export function drawDay(ctx, key) {
   ctx.textBaseline = 'top';
   ctx.textAlign = 'left';
   ctx.fillText(dnum, 70, 62);
-  if (crossBy) handX(ctx, 70 + ctx.measureText(dnum).width / 2, 150, 105, crossBy.color, rand);
+  const dw = ctx.measureText(dnum).width;
+  if (crossBy) handX(ctx, 70 + dw / 2, 150, 105, crossBy.color, rand);
+
+  // Sem aula: selinho ao lado do número do dia.
+  const off = offDay(key);
+  if (off) {
+    ctx.save();
+    ctx.translate(70 + dw + 34, 112);
+    ctx.rotate(-0.12);
+    ctx.font = `900 48px ${BOLD}`;
+    const label = 'SEM AULA';
+    const tw = ctx.measureText(label).width + 36;
+    ctx.strokeStyle = '#14a3c4';
+    ctx.lineWidth = 8;
+    ctx.fillStyle = 'rgba(20, 163, 196, 0.12)';
+    ctx.beginPath();
+    ctx.rect(0, -40, tw, 80);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#14a3c4';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, 18, 3);
+    ctx.font = `700 58px ${HAND}`;
+    ctx.fillStyle = INK;
+    ctx.fillText(off.name.length > 22 ? `${off.name.slice(0, 21)}…` : off.name, 4, 84);
+    ctx.restore();
+  }
 
   for (const m of marks) {
     const r = rng(key + m.t.id + (m.letter || '') + m.x);

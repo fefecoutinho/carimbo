@@ -1,9 +1,10 @@
 // Tela "Mês": a folha do calendário, como a impressa.
 import * as store from '../store.js';
-import { today, addMonths, monthLabel, monthGrid, WEEKDAYS_SHORT, fmtNumber } from '../dates.js';
+import { today, addDays, addMonths, monthLabel, monthGrid, WEEKDAYS_SHORT, fmtNumber } from '../dates.js';
 import { esc, icons, handX, openSheet, closeSheet, toast } from '../ui.js';
 import { pop, haptic } from '../fx.js';
 import { coverSrc } from '../covers.js';
+import { offDay, nextOffDay } from '../holidays.js';
 import { nav, go } from '../nav.js';
 
 function cellHTML(c) {
@@ -23,9 +24,10 @@ function cellHTML(c) {
   const learned = store.learnDay(c.key);
   const books = ts.filter((t) => t.kind === 'book' && store.hasEntry(t, d[t.id])).flatMap((t) => d[t.id]);
 
-  const cls = ['cal-cell', c.inMonth ? '' : 'out', c.key === today() ? 'today' : ''].join(' ');
+  const off = offDay(c.key);
+  const cls = ['cal-cell', c.inMonth ? '' : 'out', c.key === today() ? 'today' : '', off ? 'off' : ''].join(' ');
   return `<button class="${cls}" data-day="${c.key}" aria-label="Dia ${c.day}">
-    <span class="n">${c.day}${cross ? handX(cross.color) : ''}</span>
+    <span class="n">${c.day}${cross ? handX(cross.color) : ''}</span>${off ? `<span class="off-flag" title="${esc(off.name)}">🏖️</span>` : ''}
     ${tags.length || learned ? `<span class="tags">${tags.slice(0, 4).join('')}${learned ? '<span class="fr-mini" title="Praticou francês">🇫🇷</span>' : ''}</span>` : ''}
     ${big ? `<span class="big" style="color:${esc(big.color)}">${esc(d[big.id])}</span>` : ''}
     ${books.length ? `<span class="book">${books.map((b) => (coverSrc(b.c)
@@ -53,7 +55,12 @@ function summaryHTML(month) {
 
 function learnSummary(month) {
   const n = Object.keys(store.learn().days).filter((k) => k.startsWith(`${month}-`)).length;
-  return n ? `<span class="pill">🇫🇷 ${n} ${n === 1 ? 'dia' : 'dias'}</span>` : '';
+  let offs = 0;
+  const [y, m] = month.split('-').map(Number);
+  const last = new Date(y, m, 0).getDate();
+  for (let d = 1; d <= last; d++) if (offDay(`${month}-${String(d).padStart(2, '0')}`)) offs++;
+  return (n ? `<span class="pill">🇫🇷 ${n} ${n === 1 ? 'dia' : 'dias'}</span>` : '')
+    + (offs ? `<span class="pill">🏖️ ${offs} sem aula</span>` : '');
 }
 
 const markedDays = (month) => new Set([...Object.keys(store.getData().days), ...Object.keys(store.learn().days)]
@@ -86,6 +93,14 @@ function confirmClear(month, done) {
   });
 }
 
+function nextHolidayHTML() {
+  const nx = nextOffDay(addDays(today(), -1), 120);
+  if (!nx) return '';
+  const when = nx.inDays === 1 ? 'hoje' : nx.inDays === 2 ? 'amanhã' : `em ${nx.inDays - 1} dias`;
+  const [, mm, dd] = nx.key.split('-');
+  return `<p class="next-off">🏖️ Próximo dia sem aula: <b>${esc(nx.name)}</b> · ${dd}/${mm} (${when})</p>`;
+}
+
 export function renderMonth(el) {
   const m = monthLabel(nav.month);
   const weeks = monthGrid(nav.month);
@@ -99,6 +114,7 @@ export function renderMonth(el) {
       </div>
     </div>
     <div class="summary">${summary || '<span class="pill">Nenhuma marca neste mês ainda</span>'}</div>
+    ${nextHolidayHTML()}
     <div class="cal">
       <div class="cal-week">${WEEKDAYS_SHORT.map((w) => `<div class="cal-dow">${w}</div>`).join('')}</div>
       ${weeks.map((w) => `<div class="cal-week">${w.map(cellHTML).join('')}</div>`).join('')}

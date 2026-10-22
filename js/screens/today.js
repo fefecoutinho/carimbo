@@ -8,6 +8,8 @@ import { createStampScene, createFlatPaper } from '../scene.js';
 import { nav, go } from '../nav.js';
 import { themeById } from '../themes.js';
 import { onCoverReady } from '../covers.js';
+import { offDay } from '../holidays.js';
+import { openSheet, closeSheet, toast } from '../ui.js';
 
 let canvas = null;
 let scene = null;
@@ -229,6 +231,10 @@ function update(justId) {
   if (!root) return;
   root.querySelector('.hero-date').innerHTML = heroDateHTML();
   root.querySelector('.quip').textContent = quip(nav.date);
+  const off = offDay(nav.date);
+  root.querySelector('.offday-row').innerHTML = off
+    ? `<button class="offday on" data-act="offday">🏖️ <b>Sem aula</b> · ${esc(off.name)}</button>`
+    : '<button class="offday" data-act="offday">🏫 Marcar sem aula</button>';
   root.querySelector('.grid').innerHTML = cardsHTML(justId);
   const isToday = nav.date === today();
   root.querySelector('[data-act=today]').style.visibility = isToday ? 'hidden' : 'visible';
@@ -279,6 +285,7 @@ export function renderToday(el) {
       </div>
     </div>
     <p class="quip"></p>
+    <div class="offday-row"></div>
     <div class="grid"></div>
   </section>`;
   const hero = el.querySelector('.hero');
@@ -309,6 +316,7 @@ export function renderToday(el) {
       update();
     } else if (act === 'new') go('settings', { openNew: true });
     else if (act === 'learn') { haptic(); pop(); go('learn'); }
+    else if (act === 'offday') { haptic(); pop(); openOffDaySheet(); }
   });
 
   // Arrastar para os lados na folha troca o dia.
@@ -322,5 +330,45 @@ export function renderToday(el) {
     const dy = e.changedTouches[0].clientY - sy;
     sx = null;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) changeDay(dx < 0 ? 1 : -1);
+  });
+}
+
+// ---------- Dias sem aula ----------
+const OFF_SUGGESTIONS = ['Recesso', 'Ponte', 'Semana de provas', 'Férias', 'Greve', 'Aula cancelada'];
+
+function openOffDaySheet() {
+  const key = nav.date;
+  const off = offDay(key);
+  const done = () => { closeSheet(); scene.redraw(); update(); };
+  const html = off
+    ? `<div class="sheet-head"><div class="icon">🏖️</div><div><h2>Sem aula</h2><div class="sub">${esc(off.name)}</div></div></div>
+       <p class="field-label" style="font-size:14px;line-height:1.45">${off.auto
+         ? 'Esse dia é feriado e o app marcou sozinho. Se o Mauá tiver aula mesmo assim, toque abaixo.'
+         : 'Você marcou esse dia como sem aula.'}</p>
+       <button class="btn" data-off="${off.auto ? 'hasclass' : 'remove'}" style="--c:#14a3c4">${off.auto ? 'TEM AULA NESSE DIA' : 'REMOVER MARCAÇÃO'}</button>
+       <button class="btn ghost" data-off="close">Fechar</button>`
+    : `<div class="sheet-head"><div class="icon">🏫</div><div><h2>Sem aula</h2><div class="sub">Marcar folga nesse dia</div></div></div>
+       <div class="field"><input class="input off-name" maxlength="40" placeholder="Motivo (ex.: recesso)" autocomplete="off"></div>
+       <div class="field"><div class="chips">${OFF_SUGGESTIONS.map((s) => `<button class="chip" data-offfill="${esc(s)}">${esc(s)}</button>`).join('')}</div></div>
+       ${store.getData().offdays?.[key] === false ? '<p class="field-label">Esse feriado está marcado como dia com aula. Marcar aqui volta a ser sem aula.</p>' : ''}
+       <button class="btn" data-off="save" style="--c:#14a3c4">MARCAR SEM AULA</button>`;
+  openSheet(html, {
+    color: '#14a3c4',
+    onMount(sheet) {
+      sheet.addEventListener('click', (e) => {
+        const fill = e.target.closest('[data-offfill]');
+        if (fill) { sheet.querySelector('.off-name').value = fill.dataset.offfill; pop(); return; }
+        const act = e.target.closest('[data-off]')?.dataset.off;
+        if (act === 'close') closeSheet();
+        else if (act === 'hasclass') { store.setOffDay(key, false); toast('Ok, tem aula nesse dia'); done(); }
+        else if (act === 'remove') { store.setOffDay(key, null); toast('Marcação removida'); done(); }
+        else if (act === 'save') {
+          store.setOffDay(key, sheet.querySelector('.off-name').value.trim() || 'Sem aula');
+          haptic(true);
+          toast('🏖️ Dia marcado sem aula');
+          done();
+        }
+      });
+    },
   });
 }

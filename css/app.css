@@ -727,7 +727,9 @@ canvas.zooming {
 
 /* ---------- Mês ---------- */
 .month-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin: 8px 0 14px; }
-.month-head .h-display { font-size: clamp(34px, 11vw, 48px); }
+.month-head .h-display { font-size: clamp(28px, 9vw, 48px); }
+.month-head > div:first-child { min-width: 0; }
+.month-head .arrows { flex: none; }
 .month-head .year { font-family: var(--display); font-weight: 700; font-size: 16px; opacity: 0.8; margin-top: 6px; }
 .month-head .arrows { display: flex; gap: 8px; }
 
@@ -792,6 +794,25 @@ canvas.zooming {
   transition: color 0.15s, background 0.15s;
 }
 .mini-link:active { color: #fff; background: rgba(255, 255, 255, 0.12); }
+
+.cal-cell.off { background: repeating-linear-gradient(135deg, rgba(20, 163, 196, 0.1) 0 6px, rgba(20, 163, 196, 0.04) 6px 12px); }
+.cal-cell .off-flag { position: absolute; top: 2px; right: 2px; font-size: 10px; line-height: 1; }
+.next-off { margin: -4px 2px 14px; font-size: 13px; font-weight: 700; opacity: 0.9; }
+.offday-row { margin: 4px 0 8px; }
+.offday {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  border: 1.5px dashed rgba(255, 255, 255, 0.3);
+  transition: transform 0.12s;
+}
+.offday:active { transform: scale(0.96); }
+.offday.on { color: #fff; border: 0; background: linear-gradient(180deg, #2fc4e0, #14a3c4); box-shadow: 0 3px 0 #0b6f86; }
 
 /* ---------- Progresso ---------- */
 .panel {

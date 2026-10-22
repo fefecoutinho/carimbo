@@ -72,6 +72,8 @@ export function renderSettings(el) {
         <button class="toggle ${p.haptics ? 'on' : ''}" data-pref="haptics" aria-label="Vibração"></button></div>
       <div class="trow"><div class="grow"><div class="t-name">📱 Folha mexe com o celular</div><div class="t-kind">A folha da tela Hoje inclina junto com o iPhone</div></div>
         <button class="toggle ${p.motion ? 'on' : ''}" data-pref="motion" aria-label="Folha mexe com o celular"></button></div>
+      <div class="trow"><div class="grow"><div class="t-name">🏖️ Feriados sem aula</div><div class="t-kind">Nacionais, de SP e de São Caetano do Sul (Mauá)</div></div>
+        <button class="toggle ${p.holidays ? 'on' : ''}" data-pref="holidays" aria-label="Feriados"></button></div>
     </div>
 
     <div class="group-title">Backup</div>

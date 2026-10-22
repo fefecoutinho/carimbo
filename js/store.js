@@ -42,11 +42,12 @@ const DEFAULT_TRACKERS = [
 function freshData() {
   return {
     v: 1,
-    prefs: { sound: true, haptics: true, theme: 'ceu', motion: true },
+    prefs: { sound: true, haptics: true, theme: 'ceu', motion: true, holidays: true },
     trackers: structuredClone(DEFAULT_TRACKERS),
     days: {},
     learn: freshLearn(),
     covers: {},
+    offdays: {},
   };
 }
 
@@ -83,6 +84,7 @@ function normalize(d) {
     days: d.days && typeof d.days === 'object' ? d.days : {},
     learn: normalizeLearn(d.learn),
     covers: d.covers && typeof d.covers === 'object' ? d.covers : {},
+    offdays: d.offdays && typeof d.offdays === 'object' ? d.offdays : {},
   };
 }
 
@@ -263,6 +265,13 @@ export function renameBook(oldTitle, newTitle) {
   }
   if (n) save();
   return n;
+}
+
+// Dias sem aula marcados à mão: nome (sem aula) ou false (tem aula apesar do feriado).
+export function setOffDay(key, value) {
+  if (value === undefined || value === null) delete data.offdays[key];
+  else data.offdays[key] = value;
+  save();
 }
 
 // Capas de livro guardadas no aparelho: { id: { t, a, src } }.
