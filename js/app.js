@@ -78,6 +78,22 @@ function renderTabs() {
 }
 window.addEventListener('resize', () => placeLens());
 
+// Trava a barra no fundo da tela: se o iPhone encolher a área "oficial" da página
+// (acontece em telas curtas), compensa a diferença. Com teclado aberto não mexe.
+function pinTabs() {
+  const vv = window.visualViewport;
+  let fix = 0;
+  const typing = document.activeElement?.matches?.('input, textarea');
+  if (vv && !typing) fix = Math.max(0, Math.round(vv.height + vv.offsetTop - window.innerHeight));
+  document.documentElement.style.setProperty('--vv-fix', `${fix}px`);
+}
+window.visualViewport?.addEventListener('resize', pinTabs);
+window.visualViewport?.addEventListener('scroll', pinTabs);
+window.addEventListener('resize', pinTabs);
+document.addEventListener('focusout', () => setTimeout(pinTabs, 300));
+// Ao sair de um jogo a barra reaparece: confere a posição de novo.
+new MutationObserver(() => requestAnimationFrame(pinTabs)).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
 let shown = null;
 function render() {
   if (shown === 'today' && nav.tab !== 'today') leaveToday();
@@ -89,6 +105,7 @@ function render() {
   TABS.find((t) => t.id === nav.tab).render(app);
   if (changed) window.scrollTo(0, 0);
   updateBar();
+  requestAnimationFrame(pinTabs);
 }
 setRenderer(render);
 

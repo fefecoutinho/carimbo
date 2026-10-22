@@ -43,6 +43,11 @@ html {
 html, body {
   margin: 0;
   min-height: 100%;
+}
+/* A página sempre ocupa pelo menos a tela inteira: assim o iPhone não recalcula
+   onde é o "fundo" da tela e a barra de abas não sobe em telas curtas. */
+body { min-height: 100vh; min-height: 100lvh; }
+html, body {
   color: #fff;
   font-family: var(--body);
   -webkit-font-smoothing: antialiased;
@@ -173,6 +178,8 @@ body[data-theme=grafite] #sky, .tprev.grafite {
 
 /* ---------- Estrutura ---------- */
 .screen {
+  min-height: 100vh;
+  min-height: 100lvh;
   padding: calc(var(--safe-top) + 92px) 16px calc(var(--safe-bottom) + 118px);
   max-width: 560px;
   margin: 0 auto;
@@ -1341,7 +1348,7 @@ body.playing #tabs, body.playing #appbar { display: none; }
   position: fixed;
   z-index: 30;
   left: 50%;
-  bottom: calc(var(--safe-bottom) + 10px);
+  bottom: calc(var(--safe-bottom) + 10px - var(--vv-fix, 0px));
   transform: translateX(-50%);
   display: flex;
   gap: 2px;
