@@ -2,7 +2,7 @@
 import * as store from './store.js';
 import { openSheet, closeSheet, esc, toast } from './ui.js';
 import { pop, haptic } from './fx.js';
-import { searchCovers, saveCover, coverSrc } from './covers.js';
+import { searchCovers, saveCover, coverSrc, coverFromFile } from './covers.js';
 import { parse, today, addDays, WEEKDAYS, shortDate, fmtNumber, parseNumber } from './dates.js';
 
 export function dayLabel(key) {
@@ -184,11 +184,17 @@ function bookSheet(key, t, onDone) {
     return src ? `<img class="mini-cover" src="${esc(src)}" alt="">` : `<span>📖</span>`;
   };
 
+  // Primeira opção da fileira: tirar/escolher uma foto da capa (funciona para qualquer livro).
+  const photoTile = `<label class="cover-opt photo" aria-label="Foto da capa">
+      <input type="file" accept="image/*" data-photo hidden>
+      <span class="photo-box"><b>📷</b><small>Foto da capa</small></span>
+      <span class="c-title">Tirar ou escolher foto</span></label>`;
+
   const coversHTML = () => {
-    if (typed.trim().length < 2) return '<p class="field-label" style="margin:0">Digite o nome e eu procuro a capa 🔎</p>';
-    if (searching && !results.length) return '<div class="cover-row">' + '<span class="cover-skel"></span>'.repeat(4) + '</div>';
-    if (!results.length) return '<p class="field-label" style="margin:0">Não achei capa pra esse nome. Tenta o título original ou com o autor — ou carimba sem capa mesmo.</p>';
-    return `<div class="cover-row">${results.map((r, i) => {
+    if (typed.trim().length < 2) return `<div class="cover-row">${photoTile}</div><p class="field-label" style="margin:6px 0 0">Digite o nome e eu procuro a capa 🔎</p>`;
+    if (searching && !results.length) return `<div class="cover-row">${photoTile}${'<span class="cover-skel"></span>'.repeat(3)}</div>`;
+    if (!results.length) return `<div class="cover-row">${photoTile}</div><p class="field-label" style="margin:6px 0 0">Não achei capa pra esse nome. Tenta com o nome do autor, ou tira uma foto da capa 📷</p>`;
+    return `<div class="cover-row">${photoTile}${results.map((r, i) => {
       const on = selected && (selected.url ? selected.url === r.url : false);
       return `<button class="cover-opt ${on ? 'on' : ''}" data-cover="${i}" aria-label="${esc(r.title)}">
         <img src="${esc(r.url)}" alt="" loading="lazy" referrerpolicy="no-referrer">
@@ -214,11 +220,12 @@ function bookSheet(key, t, onDone) {
         <button class="${action === 'finish' ? 'on' : ''}" data-action="finish">✅ Terminei</button>
       </div></div>
       <div class="field">
-        <input class="input" placeholder="Nome do livro" maxlength="80" enterkeyhint="done" autocomplete="off" aria-label="Nome do livro" value="${esc(typed)}">
+        <input class="input book-title" placeholder="Nome do livro" maxlength="80" enterkeyhint="done" autocomplete="off" aria-label="Nome do livro" value="${esc(typed)}">
       </div>
       ${suggestions.length ? `<div class="field"><div class="field-label">Lendo agora</div>
         <div class="chips">${suggestions.map((b) => `<button class="chip" data-fill="${esc(b.title)}" data-fillc="${esc(b.c || '')}">${esc(b.title)}</button>`).join('')}</div></div>` : ''}
-      <div class="field"><div class="field-label">Capa</div><div class="covers">${selected?.id ? `<div class="cover-row"><span class="cover-opt on"><img src="${esc(coverSrc(selected.id))}" alt=""><span class="c-title">${esc(typed)}</span></span></div>` : coversHTML()}</div></div>
+      <div class="field"><div class="field-label">Capa</div><div class="covers">${selected?.id ? `<div class="cover-row"><span class="cover-opt on"><img src="${esc(coverSrc(selected.id))}" alt=""><span class="c-title">${esc(typed)}</span></span>
+        <button class="chip" data-unselect style="align-self:center">Trocar capa</button></div>` : coversHTML()}</div></div>
       <button class="btn" data-act="add" style="--c:${esc(t.color)}">${saving ? 'GUARDANDO A CAPA…' : 'CARIMBAR'}</button>
       ${events.length ? '<button class="btn ghost" data-act="close">Pronto</button>' : ''}`;
   };
@@ -254,13 +261,28 @@ function bookSheet(key, t, onDone) {
     color: t.color,
     onMount(sheet) {
       render(sheet);
+      sheet.addEventListener('change', async (e) => {
+        if (!e.target.matches('[data-photo]')) return;
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+          selected = { id: await coverFromFile(file, typed.trim()) };
+          render(sheet);
+          pop(true);
+          haptic(true);
+        } catch {
+          toast('Não consegui abrir essa foto');
+        }
+      });
       sheet.addEventListener('input', (e) => {
-        if (!e.target.matches('input')) return;
+        // Só o campo do nome do livro (não o de renomear nem o da foto).
+        if (!e.target.matches('.book-title')) return;
         typed = e.target.value;
         selected = null;
         search(sheet);
       });
       sheet.addEventListener('click', async (e) => {
+        if (e.target.closest('[data-unselect]')) { selected = null; render(sheet); search(sheet); pop(false); return; }
         const el = e.target.closest('[data-action],[data-del],[data-fill],[data-act],[data-cover],[data-edit],[data-saveedit]');
         if (!el || saving) return;
         if (el.dataset.edit !== undefined) {
