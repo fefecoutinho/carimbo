@@ -8,7 +8,8 @@ export const THEMES = [
   { id: 'cromo', name: 'Cromo', desc: 'Todas as cores, girando sem parar', stamp: 'chroma', sky: ['#14062e', '#ff3b8a', '#2fd1ff'] },
   { id: 'opala', name: 'Opala', desc: 'Perolado e iridescente', stamp: 'opal', sky: ['#0e1630', '#3c5a8c', '#9fe8e0'] },
   { id: 'monstro', name: 'Monstro', desc: 'O carimbo ganhou olhos. Ele te observa', stamp: 'monster', sky: ['#1a0b3a', '#3d1a78', '#7cff6b'] },
-  { id: 'grafite', name: 'Grafite', desc: 'Minimalista, preto e cinza', stamp: 'graphite', sky: ['#0b0b0f', '#1c1c24', '#4a4a58'] },
+  // Mantém o id 'grafite' para quem já tinha escolhido o tema antigo.
+  { id: 'grafite', name: 'Noir', desc: 'Preto profundo com uma onda líquida animada', stamp: 'graphite', sky: ['#020208', '#0a0f3a', '#3a2bd6'] },
 ];
 
 export const themeById = (id) => THEMES.find((t) => t.id === id) || THEMES[0];

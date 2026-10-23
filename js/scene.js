@@ -153,10 +153,11 @@ export function createStampScene(canvas) {
       knob: new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.08, clearcoat: 1, iridescence: 1, iridescenceIOR: 1.8, iridescenceThicknessRange: [250, 900] }),
       neck: new THREE.MeshPhysicalMaterial({ color: '#e6f4ff', roughness: 0.2, clearcoat: 1, iridescence: 0.6 }),
     },
+    // Noir: obsidiana preta espelhada com pescoço cromado.
     graphite: {
-      body: new THREE.MeshPhysicalMaterial({ color: '#2a2a32', roughness: 0.5, clearcoat: 0.35, clearcoatRoughness: 0.4 }),
-      knob: new THREE.MeshPhysicalMaterial({ color: '#3a3a44', roughness: 0.35, clearcoat: 0.6 }),
-      neck: new THREE.MeshPhysicalMaterial({ color: '#8a8a96', metalness: 0.8, roughness: 0.3 }),
+      body: new THREE.MeshPhysicalMaterial({ color: '#06070d', roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.04, sheen: 0.4, sheenColor: '#3a4cff' }),
+      knob: new THREE.MeshPhysicalMaterial({ color: '#0a0c1c', roughness: 0.06, clearcoat: 1, clearcoatRoughness: 0.02, sheen: 0.6, sheenColor: '#6b4bff' }),
+      neck: new THREE.MeshPhysicalMaterial({ color: '#dfe3ff', metalness: 1, roughness: 0.12 }),
     },
   };
 

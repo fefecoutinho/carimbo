@@ -139,9 +139,33 @@ body[data-theme=monstro] #sky, .tprev.monstro {
     linear-gradient(180deg, #3d1a78, #1a0b3a 75%);
 }
 
+/* Noir: preto profundo, onda líquida animada (js/liquid.js) e cara de app da Apple. */
 body[data-theme=grafite] #sky, .tprev.grafite {
-  background: radial-gradient(100% 60% at 50% 0%, #34343f, transparent 70%), linear-gradient(180deg, #17171d, #0b0b0f);
+  background:
+    radial-gradient(90% 45% at 85% 78%, rgba(40, 70, 255, 0.55), transparent 70%),
+    radial-gradient(70% 30% at 20% 58%, rgba(110, 70, 255, 0.45), transparent 70%),
+    linear-gradient(180deg, #020208 0%, #05072a 45%, #0b1a8a 80%, #050a3a 100%);
 }
+body[data-theme=grafite] #sky::after { display: none; }
+#liquid { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+body[data-theme=grafite] {
+  --display: ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --glass: rgba(255, 255, 255, 0.07);
+  --glass-line: rgba(255, 255, 255, 0.12);
+}
+body[data-theme=grafite] .h-display,
+body[data-theme=grafite] .hero-date .bignum { letter-spacing: -0.045em; }
+body[data-theme=grafite] .hero-date .bignum {
+  background: linear-gradient(180deg, #ffffff 25%, rgba(170, 180, 255, 0.55));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+body[data-theme=grafite] .card,
+body[data-theme=grafite] .panel { box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 18px 40px -20px rgba(0, 0, 0, 0.8); }
+body[data-theme=grafite] .card:not(.done) { background: rgba(255, 255, 255, 0.06); }
+body[data-theme=grafite] .round-btn,
+body[data-theme=grafite] .pill:not(.solid) { box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset; }
+body[data-theme=grafite] #tabs { background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03)), rgba(8, 9, 20, 0.45); }
 
 .themes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .theme {
@@ -174,7 +198,7 @@ body[data-theme=grafite] #sky, .tprev.grafite {
 .tstamp.cromo { --k: conic-gradient(#ff3b5c, #ffc21a, #1fc77e, #2f7bff, #b44bff, #ff3b5c); --b: linear-gradient(90deg, #ff3b8a, #2fd1ff); }
 .tstamp.opala { --k: radial-gradient(circle at 35% 30%, #fff, #e3d9ff 45%, #a8f0e6); --b: linear-gradient(120deg, #ffe3f6, #e6e9ff, #c9fff4); --n: #eef6ff; }
 .tstamp.monstro { --k: radial-gradient(circle at 34% 45%, #111 0 2px, #fff 2.5px 5px, transparent 5.5px), radial-gradient(circle at 66% 45%, #111 0 2px, #fff 2.5px 5px, transparent 5.5px), #7cff6b; --b: #4fd64a; }
-.tstamp.grafite { --k: #3a3a44; --b: #2a2a32; --n: #8a8a96; }
+.tstamp.grafite { --k: radial-gradient(circle at 35% 30%, #4a4f80, #07070d 60%); --b: linear-gradient(180deg, #23243a, #06070d); --n: linear-gradient(90deg, #9aa0c8, #f2f4ff, #9aa0c8); }
 
 /* ---------- Estrutura ---------- */
 .screen {
@@ -218,16 +242,16 @@ body[data-theme=grafite] #sky, .tprev.grafite {
 }
 .wordmark {
   position: relative;
-  font-family: var(--display);
-  font-weight: 900;
-  font-size: calc(15px - var(--p) * 2px);
-  letter-spacing: 0.08em;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: calc(21px - var(--p) * 2px);
+  letter-spacing: -0.025em;
   transform: translateY(calc(var(--p) * 2px));
 }
-.wordmark .tag-mini { --c: #ff3b5c; }
+.logo-mark { width: 1.25em; height: 1.25em; flex: none; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25)); }
 #appbar .pill { position: relative; padding: 6px 12px; margin-top: -6px; font-size: 13px; }
 
 .pill {

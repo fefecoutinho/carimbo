@@ -88,3 +88,18 @@ function enableSwipeDown(sheet) {
 }
 
 export const isSheetOpen = () => !!current;
+
+// Logo do Carimbo: um dia do calendário (quadrado arredondado) recebendo o carimbo (círculo).
+// O círculo abre um respiro no canto do quadrado, como um ícone de sistema.
+export function logoMark(id = 'lg') {
+  return `<svg viewBox="0 0 32 32" aria-hidden="true" class="logo-mark">
+    <defs>
+      <linearGradient id="${id}-g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#6f8bff"/><stop offset="1" stop-color="#9b5cff"/>
+      </linearGradient>
+      <mask id="${id}-m"><rect width="32" height="32" fill="#fff"/><circle cx="22.5" cy="22.5" r="9.6" fill="#000"/></mask>
+    </defs>
+    <rect x="3" y="3" width="22" height="22" rx="7" fill="none" stroke="currentColor" stroke-width="2.6" mask="url(#${id}-m)"/>
+    <circle cx="22.5" cy="22.5" r="6.8" fill="url(#${id}-g)"/>
+  </svg>`;
+}
