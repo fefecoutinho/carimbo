@@ -1,7 +1,7 @@
 // Desenha a "folha do dia" num canvas: o número do dia, os carimbos, o peso,
 // o kanji, os livros e os eventos — como na folha de papel impressa.
 import { trackers, day, hasEntry, learnDay } from './store.js';
-import { parse, fmtNumber } from './dates.js';
+import { parse, fmtNumber, dayNum } from './dates.js';
 import { coverImage } from './covers.js';
 import { offDay } from './holidays.js';
 
@@ -264,7 +264,7 @@ export function drawDay(ctx, key) {
   const { marks, crossBy } = layout(key);
 
   // Número do dia (riscado com X se treinou)
-  const dnum = String(parse(key).getDate());
+  const dnum = String(dayNum(parse(key)));
   ctx.fillStyle = INK;
   ctx.font = `900 170px ${BOLD}`;
   ctx.textBaseline = 'top';

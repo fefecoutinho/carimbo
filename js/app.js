@@ -1,6 +1,6 @@
 // Ponto de partida do app: céu, abas, telas e modo offline.
 import * as store from './store.js';
-import { today } from './dates.js';
+import { today, setFixedDay } from './dates.js';
 import { icons, logoMark } from './ui.js';
 import { themeById } from './themes.js';
 import { startLiquid, stopLiquid } from './liquid.js';
@@ -33,6 +33,7 @@ const SKIES = [
 function paintSky() {
   const theme = themeById(store.prefs().theme);
   document.body.dataset.theme = theme.id;
+  setFixedDay(theme.id === 'lula' ? 13 : null);
   if (theme.id === 'grafite') startLiquid();
   else stopLiquid();
   const h = new Date().getHours();

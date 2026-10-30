@@ -44,7 +44,7 @@ export function monthGrid(month) {
   do {
     const week = [];
     for (let i = 0; i < 7; i++) {
-      week.push({ key: keyOf(cur), inMonth: cur.getMonth() === m - 1, day: cur.getDate() });
+      week.push({ key: keyOf(cur), inMonth: cur.getMonth() === m - 1, day: dayNum(cur) });
       cur.setDate(cur.getDate() + 1);
     }
     weeks.push(week);
@@ -57,9 +57,14 @@ export function daysInMonth(month) {
   return new Date(y, m, 0).getDate();
 }
 
+// Número do dia que aparece na tela. No tema "Faz o L" todo dia vira 13 (só na exibição; os dados não mudam).
+let fixedDay = null;
+export function setFixedDay(n) { fixedDay = n; }
+export const dayNum = (d) => fixedDay ?? d.getDate();
+
 export function shortDate(key) {
   const d = parse(key);
-  return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3).toLowerCase()}`;
+  return `${dayNum(d)} ${MONTHS[d.getMonth()].slice(0, 3).toLowerCase()}`;
 }
 
 export function fmtNumber(n, decimals = 1) {

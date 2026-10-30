@@ -1,6 +1,6 @@
 // Tela "Mês": a folha do calendário, como a impressa.
 import * as store from '../store.js';
-import { today, addDays, addMonths, monthLabel, monthGrid, WEEKDAYS_SHORT, fmtNumber } from '../dates.js';
+import { today, addDays, addMonths, monthLabel, monthGrid, WEEKDAYS_SHORT, fmtNumber, dayNum, parse } from '../dates.js';
 import { esc, icons, handX, openSheet, closeSheet, toast } from '../ui.js';
 import { pop, haptic } from '../fx.js';
 import { coverSrc } from '../covers.js';
@@ -97,7 +97,8 @@ function nextHolidayHTML() {
   const nx = nextOffDay(addDays(today(), -1), 120);
   if (!nx) return '';
   const when = nx.inDays === 1 ? 'hoje' : nx.inDays === 2 ? 'amanhã' : `em ${nx.inDays - 1} dias`;
-  const [, mm, dd] = nx.key.split('-');
+  const [, mm] = nx.key.split('-');
+  const dd = String(dayNum(parse(nx.key))).padStart(2, '0');
   return `<p class="next-off">🏖️ Próximo dia sem aula: <b>${esc(nx.name)}</b> · ${dd}/${mm} (${when})</p>`;
 }
 

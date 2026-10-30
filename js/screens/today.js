@@ -1,6 +1,6 @@
 // Tela "Hoje": a folha do dia em 3D e os botões para carimbar.
 import * as store from '../store.js';
-import { today, addDays, parse, WEEKDAYS, MONTHS, fmtNumber } from '../dates.js';
+import { today, addDays, parse, WEEKDAYS, MONTHS, fmtNumber, dayNum } from '../dates.js';
 import { esc, icons } from '../ui.js';
 import { openLog } from '../sheets.js';
 import { thump, haptic, inkBurst, pop, swoosh, whoomp } from '../fx.js';
@@ -224,7 +224,7 @@ function learnCardHTML() {
 function heroDateHTML() {
   const d = parse(nav.date);
   return `<div class="eyebrow">${WEEKDAYS[d.getDay()]} · ${MONTHS[d.getMonth()]}</div>
-    <div class="bignum">${d.getDate()}</div>`;
+    <div class="bignum">${dayNum(d)}</div>`;
 }
 
 function update(justId) {
