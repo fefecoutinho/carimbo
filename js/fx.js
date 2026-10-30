@@ -27,9 +27,12 @@ function noise(ac, duration) {
   return src;
 }
 
+const lulaOn = () => prefs().theme === 'lula';
+
 // "Tum!" do carimbo batendo no papel.
 export function thump() {
   if (!prefs().sound) return;
+  if (lulaOn()) { surdo(); return; }
   const ac = ctx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -79,6 +82,7 @@ export function pop(up = true) {
 // "Swooosh" suave: ruído filtrado que sobe e desce, com um brilho no final.
 export function swoosh() {
   if (!prefs().sound) return;
+  if (lulaOn()) { batucada(); return; }
   const ac = ctx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -196,7 +200,108 @@ export const fail = () => notes([220, 165], { type: 'sine', gap: 0.13, len: 0.3,
 // Carta lembrada: duas notinhas curtas.
 export const ding = () => notes([494, 659], { gap: 0.07, len: 0.22, vol: 0.16 });
 // Fim de rodada: fanfarra curtinha.
-export const fanfare = () => notes([392, 494, 587, 784, 587, 784], { gap: 0.09, len: 0.3, vol: 0.18 });
+export const fanfare = () => {
+  notes([392, 494, 587, 784, 587, 784], { gap: 0.09, len: 0.3, vol: 0.18 });
+  if (lulaOn()) cheer();
+};
+
+// ---------- Sons do tema "Faz o L": clima de comício ----------
+// Batida de surdo (o tambor grave da bateria de escola de samba).
+function drum(ac, t, { from = 120, to = 52, len = 0.55, vol = 0.85 } = {}) {
+  const osc = ac.createOscillator();
+  const g = ac.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(from, t);
+  osc.frequency.exponentialRampToValueAtTime(to, t + 0.12);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  osc.connect(g).connect(ac.destination);
+  osc.start(t);
+  osc.stop(t + len + 0.05);
+  // Pele do tambor: um "tapa" curtinho.
+  const n = noise(ac, 0.04);
+  const lp = ac.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 900;
+  const ng = ac.createGain();
+  ng.gain.value = vol * 0.5;
+  n.connect(lp).connect(ng).connect(ac.destination);
+  n.start(t);
+}
+
+// Tamborim: batida seca e curta.
+function tamborim(ac, t, vol = 0.22) {
+  const n = noise(ac, 0.05);
+  const bp = ac.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = 800;
+  bp.Q.value = 2.5;
+  const g = ac.createGain();
+  g.gain.value = vol;
+  n.connect(bp).connect(g).connect(ac.destination);
+  n.start(t);
+  const osc = ac.createOscillator();
+  const og = ac.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = 620;
+  og.gain.setValueAtTime(vol * 0.6, t);
+  og.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+  osc.connect(og).connect(ac.destination);
+  osc.start(t);
+  osc.stop(t + 0.08);
+}
+
+// Carimbo no tema Faz o L: "TUM" de surdo.
+function surdo() {
+  const ac = ctx();
+  if (!ac) return;
+  drum(ac, ac.currentTime);
+}
+
+// "Voltar pra hoje" no tema Faz o L: uma viradinha de batucada.
+function batucada() {
+  const ac = ctx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  [0, 0.11, 0.22, 0.29, 0.4].forEach((d, i) => tamborim(ac, t + d, i === 4 ? 0.28 : 0.2));
+  drum(ac, t, { from: 150, to: 70, len: 0.3, vol: 0.5 });
+  drum(ac, t + 0.44, { len: 0.6, vol: 0.85 });
+}
+
+// Torcida de comício: uma multidão gritando "êêê", que cresce e some.
+export function cheer() {
+  if (!prefs().sound) return;
+  const ac = ctx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  const dur = 1.6;
+  const len = Math.ceil(ac.sampleRate * dur);
+  const buf = ac.createBuffer(1, len, ac.sampleRate);
+  const ch = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
+  const out = ac.createGain();
+  out.gain.setValueAtTime(0.0001, t);
+  out.gain.exponentialRampToValueAtTime(0.5, t + 0.35);
+  out.gain.setValueAtTime(0.5, t + 0.8);
+  out.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  out.connect(ac.destination);
+  // Várias "vozes" (formantes da vogal ê) levemente desafinadas entre si.
+  for (const [f, q, v] of [[520, 6, 0.5], [610, 7, 0.4], [1900, 5, 0.25], [2300, 6, 0.18], [480, 5, 0.35]]) {
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    const bp = ac.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.Q.value = q;
+    bp.frequency.setValueAtTime(f * 0.92, t);
+    bp.frequency.linearRampToValueAtTime(f * 1.05, t + 0.5);
+    bp.frequency.linearRampToValueAtTime(f, t + dur);
+    const g = ac.createGain();
+    g.gain.value = v;
+    src.connect(bp).connect(g).connect(out);
+    src.start(t, Math.random() * 0.3);
+  }
+}
 
 // Vibração: no iPhone (Safari 18+) um <input switch> escondido dá um toque leve.
 let hapticLabel;

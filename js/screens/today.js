@@ -3,12 +3,13 @@ import * as store from '../store.js';
 import { today, addDays, parse, WEEKDAYS, MONTHS, fmtNumber, dayNum } from '../dates.js';
 import { esc, icons } from '../ui.js';
 import { openLog } from '../sheets.js';
-import { thump, haptic, inkBurst, pop, swoosh, whoomp } from '../fx.js';
+import { thump, haptic, inkBurst, pop, swoosh, whoomp, cheer } from '../fx.js';
 import { createStampScene, createFlatPaper } from '../scene.js';
 import { nav, go } from '../nav.js';
 import { themeById } from '../themes.js';
 import { onCoverReady } from '../covers.js';
 import { offDay } from '../holidays.js';
+import { isLula, lulaQuip, bordao } from '../lula.js';
 import { openSheet, closeSheet, toast } from '../ui.js';
 
 let canvas = null;
@@ -167,6 +168,7 @@ function quip(key) {
   const done = store.doneCount(key);
   const total = store.trackers().length;
   const isToday = key === today();
+  if (isLula()) return lulaQuip({ done, total, isToday, future: key > today() });
   if (key > today()) return done ? 'Anotado no futuro. Organizado, hein.' : 'Esse dia ainda não chegou. Dá pra deixar um evento marcado.';
   if (!done) return isToday ? 'Folha em branco. Bora sujar ela de tinta?' : 'Esqueceu de marcar? Ainda dá tempo.';
   if (done >= total) return 'Folha completa. Lendário. 🏆';
@@ -267,6 +269,10 @@ function afterLog(trackerId, stamped) {
     haptic(true);
     if (pt) inkBurst(pt.x, pt.y, t.color, 18);
     update(trackerId);
+    if (isLula()) {
+      if (store.doneCount(key) >= store.trackers().length) cheer();
+      toast(bordao());
+    }
   });
   if (heroInView()) go2();
   else { window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(go2, 380); }
