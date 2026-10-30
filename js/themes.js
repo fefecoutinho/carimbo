@@ -10,6 +10,8 @@ export const THEMES = [
   { id: 'monstro', name: 'Monstro', desc: 'O carimbo ganhou olhos. Ele te observa', stamp: 'monster', sky: ['#1a0b3a', '#3d1a78', '#7cff6b'] },
   // Mantém o id 'grafite' para quem já tinha escolhido o tema antigo.
   { id: 'grafite', name: 'Noir', desc: 'Preto profundo com uma onda líquida animada', stamp: 'graphite', sky: ['#020208', '#0a0f3a', '#3a2bd6'] },
+  { id: 'brasil', name: 'Brasil', desc: 'Verde, amarelo e o céu estrelado da bandeira', stamp: 'brasil', sky: ['#00401c', '#007a33', '#ffdf00'] },
+  { id: 'franca', name: 'França', desc: 'Paris à noite, bleu, blanc, rouge', stamp: 'franca', sky: ['#060818', '#0a1030', '#ef4135'] },
 ];
 
 export const themeById = (id) => THEMES.find((t) => t.id === id) || THEMES[0];

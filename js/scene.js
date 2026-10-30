@@ -153,6 +153,18 @@ export function createStampScene(canvas) {
       knob: new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.08, clearcoat: 1, iridescence: 1, iridescenceIOR: 1.8, iridescenceThicknessRange: [250, 900] }),
       neck: new THREE.MeshPhysicalMaterial({ color: '#e6f4ff', roughness: 0.2, clearcoat: 1, iridescence: 0.6 }),
     },
+    // Brasil: corpo verde, pegador amarelo e pescoço azul.
+    brasil: {
+      body: new THREE.MeshPhysicalMaterial({ color: '#009c3b', roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.1 }),
+      knob: new THREE.MeshPhysicalMaterial({ color: '#ffdf00', roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.08 }),
+      neck: new THREE.MeshPhysicalMaterial({ color: '#002776', roughness: 0.3, clearcoat: 0.8 }),
+    },
+    // França: corpo azul, pegador vermelho e pescoço branco.
+    franca: {
+      body: new THREE.MeshPhysicalMaterial({ color: '#0055a4', roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.1 }),
+      knob: new THREE.MeshPhysicalMaterial({ color: '#ef4135', roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.08 }),
+      neck: new THREE.MeshPhysicalMaterial({ color: '#f5f2ec', roughness: 0.35, clearcoat: 0.8 }),
+    },
     // Noir: obsidiana preta espelhada com pescoço cromado.
     graphite: {
       body: new THREE.MeshPhysicalMaterial({ color: '#06070d', roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.04, sheen: 0.4, sheenColor: '#3a4cff' }),
