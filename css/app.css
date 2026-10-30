@@ -247,6 +247,28 @@ body[data-theme=franca] .hero-date .bignum {
   background-clip: text;
 }
 
+/* Faz o L: vermelho PT, estrela com PT e o mapa do Nordeste ao fundo. */
+body[data-theme=lula] #sky, .tprev.lula { background: url('../img/lula-bg.svg') center / cover no-repeat, #6e0a10; }
+.tprev.lula { background: url('../img/pt-star.svg') 18% 45% / 62% no-repeat, url('../img/lula-bg.svg') center 70% / 160% no-repeat, #6e0a10; }
+body[data-theme=lula] #sky::before {
+  content: '';
+  position: absolute;
+  left: calc(50% - 47px);
+  top: calc(var(--safe-top) + 185px);
+  width: 250px;
+  height: 250px;
+  transform: translate(-50%, -50%);
+  background: url('../img/pt-star.svg') center / contain no-repeat;
+}
+body[data-theme=lula] #sky::after { opacity: 0.35; }
+/* O número vira só contorno, para a estrela aparecer por trás, como num cartaz. */
+body[data-theme=lula] .hero-date .bignum {
+  background: none;
+  color: rgba(255, 255, 255, 0.08);
+  -webkit-text-stroke: 3px #fff;
+  filter: drop-shadow(0 6px 16px rgba(60, 0, 0, 0.5));
+}
+
 .themes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .theme {
   display: flex;
@@ -280,6 +302,8 @@ body[data-theme=franca] .hero-date .bignum {
 .tstamp.monstro { --k: radial-gradient(circle at 34% 45%, #111 0 2px, #fff 2.5px 5px, transparent 5.5px), radial-gradient(circle at 66% 45%, #111 0 2px, #fff 2.5px 5px, transparent 5.5px), #7cff6b; --b: #4fd64a; }
 .tstamp.brasil { --k: radial-gradient(circle at 35% 30%, #fff38a, #ffdf00 55%, #c9a800); --b: linear-gradient(180deg, #1fc25a, #00873a); --n: #2a4fb0; }
 .tstamp.franca { --k: radial-gradient(circle at 35% 30%, #ff8f86, #ef4135 55%, #a8221a); --b: linear-gradient(180deg, #2f7fd6, #00458a); --n: #f5f2ec; }
+.tstamp.lula { background: url('../img/lula-hand.svg') center / contain no-repeat; width: 50px; height: 54px; transform: translateX(42px); }
+.tstamp.lula::before, .tstamp.lula::after { display: none; }
 .tstamp.grafite { --k: radial-gradient(circle at 35% 30%, #4a4f80, #07070d 60%); --b: linear-gradient(180deg, #23243a, #06070d); --n: linear-gradient(90deg, #9aa0c8, #f2f4ff, #9aa0c8); }
 
 /* ---------- Estrutura ---------- */

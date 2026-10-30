@@ -1,6 +1,6 @@
 // Guarda o app no iPhone para abrir rápido e funcionar sem internet.
 // Troque VERSION a cada atualização para o app baixar a versão nova.
-const VERSION = 'carimbo-1.9.0';
+const VERSION = 'carimbo-1.10.0';
 const ASSETS = [
   './',
   'index.html',
@@ -15,6 +15,9 @@ const ASSETS = [
   'js/covers.js',
   'js/holidays.js',
   'js/liquid.js',
+  'img/lula-bg.svg',
+  'img/lula-hand.svg',
+  'img/pt-star.svg',
   'js/paper.js',
   'js/scene.js',
   'js/sheets.js',

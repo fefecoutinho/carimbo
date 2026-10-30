@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 860" preserveAspectRatio="xMidYMid slice">
+<defs>
+ <radialGradient id="g" cx="50%" cy="32%" r="60%"><stop offset="0" stop-color="#b3121b"/><stop offset=".55" stop-color="#6e0a10"/><stop offset="1" stop-color="#2a0306"/></radialGradient>
+ <linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff3a3a"/><stop offset="1" stop-color="#c8000f"/></linearGradient>
+ <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="14"/></filter>
+</defs>
+<rect width="400" height="860" fill="url(#g)"/>
+<g fill="rgba(255,214,90,.09)" stroke="rgba(255,214,90,.5)" stroke-width="1.6" stroke-linejoin="round"><path d="M100.3 160.8 L119.7 171.5 L134.8 184.4 L145.5 193.0 L167.0 188.7 L192.8 197.3 L222.9 197.3 L244.4 201.6 L263.8 216.7 L291.7 238.2 L317.5 244.6 L334.7 253.2 L340.1 274.7 L343.3 289.8 L341.2 311.2 L332.6 330.6 L323.9 343.5 L308.9 360.7 L296.0 371.5 L280.9 390.8 L263.8 414.4 L253.0 429.5 L253.0 455.3 L250.8 485.4 L248.7 517.6 L237.9 530.5 L227.2 521.9 L218.6 494.0 L210.0 481.1 L177.8 472.5 L145.5 457.4 L124.0 451.0 L102.5 459.6 L102.5 438.1 L98.2 416.6 L96.1 380.1 L106.8 365.0 L102.5 356.4 L93.9 339.2 L74.6 322.0 L72.4 300.5 L59.5 279.0 L46.6 253.2 L59.5 240.3 L74.6 214.5 L85.3 197.3 L93.9 180.1 Z"/></g>
+<g fill="none" stroke="rgba(255,214,90,.2)" stroke-width="1" stroke-dasharray="3 4" stroke-linecap="round"><path d="M192.8 197.3 L184.2 223.1 L171.3 255.4 L154.1 283.3 L132.6 309.1 L115.4 334.9 L106.8 365.0"/><path d="M210.0 200.5 L212.2 227.4 L218.6 257.5 L212.2 287.6 L210.0 309.1 L188.5 330.6 L167.0 341.4 L141.2 360.7 L115.4 369.3"/><path d="M291.7 238.2 L270.2 261.8 L261.6 287.6 L244.4 304.8 L220.8 298.4"/><path d="M339.0 276.9 L311.1 281.1 L289.6 274.7 L268.1 279.0"/><path d="M342.2 298.4 L319.7 296.2 L291.7 302.6 L263.8 300.5"/><path d="M334.7 328.5 L308.9 334.9 L276.7 334.9 L268.1 341.4 L242.2 332.8 L214.3 334.9 L210.0 317.7"/><path d="M308.9 360.7 L280.9 347.8 L270.2 343.5"/><path d="M280.9 390.8 L274.5 365.0 L270.2 345.6"/></g>
+<path d="M304.6 319.3 L306.2 324.0 L311.3 324.1 L307.3 327.2 L308.7 332.0 L304.6 329.1 L300.5 332.0 L301.9 327.2 L297.9 324.1 L303.0 324.0 Z" fill="#ffd65a"/>
+</svg>

@@ -191,6 +191,43 @@ export function createStampScene(canvas) {
   eyes.visible = false;
   knob.add(eyes);
 
+  // Tema "Faz o L": no lugar do carimbo, a mão esquerda do Lula fazendo o L (sem o mindinho).
+  // As costas da mão ficam viradas para a câmera; quem carimba é a manga.
+  const hand = new THREE.Group();
+  const skin = new THREE.MeshPhysicalMaterial({ color: '#d99a72', roughness: 0.55, clearcoat: 0.15, sheen: 0.4, sheenColor: '#ff9a7a' });
+  const nail = new THREE.MeshPhysicalMaterial({ color: '#f2c4b0', roughness: 0.25, clearcoat: 1 });
+  const sleeveMat = new THREE.MeshPhysicalMaterial({ color: '#d4141c', roughness: 0.45, clearcoat: 0.6, clearcoatRoughness: 0.3 });
+  const cuffMat = new THREE.MeshPhysicalMaterial({ color: '#fbfaf6', roughness: 0.5 });
+  const handParts = [];
+  const part = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    m.rotation.set(rx, ry, rz);
+    handParts.push(m);
+    return m;
+  };
+  part(new THREE.CylinderGeometry(0.3, 0.33, 0.34, 40), sleeveMat, 0, -0.13, 0);
+  part(new THREE.CylinderGeometry(0.255, 0.27, 0.09, 40), cuffMat, 0, 0.08, 0);
+  part(new THREE.CylinderGeometry(0.2, 0.23, 0.2, 32), skin, 0, 0.18, 0);
+  part(new RoundedBoxGeometry(0.62, 0.6, 0.3, 4, 0.12), skin, 0, 0.48, 0);
+  // Indicador em pé.
+  part(new THREE.CapsuleGeometry(0.085, 0.42, 8, 20), skin, 0.2, 0.99, 0);
+  part(new THREE.SphereGeometry(0.06, 20, 12), nail, 0.2, 1.17, 0.05).scale.set(1, 1.3, 0.45);
+  // Médio e anelar dobrados (só aparecem os nós dos dedos).
+  for (const x of [0.02, -0.15]) {
+    part(new THREE.SphereGeometry(0.085, 24, 16), skin, x, 0.79, 0.04);
+    part(new THREE.CapsuleGeometry(0.075, 0.14, 8, 16), skin, x, 0.8, -0.08, Math.PI / 2);
+  }
+  // Onde seria o mindinho: só um cotoquinho liso.
+  part(new THREE.SphereGeometry(0.06, 20, 12), skin, -0.27, 0.76, 0.01).scale.set(1, 0.6, 1);
+  // Polegar apontando para o lado, formando o L.
+  part(new THREE.SphereGeometry(0.15, 24, 16), skin, 0.3, 0.36, -0.02).scale.set(0.9, 1.1, 0.8);
+  part(new THREE.CapsuleGeometry(0.09, 0.3, 8, 20), skin, 0.52, 0.42, 0, 0, 0, -Math.PI / 2 + 0.18);
+  part(new THREE.SphereGeometry(0.055, 20, 12), nail, 0.66, 0.46, 0.05).scale.set(1.3, 1, 0.45);
+  for (const m of handParts) { m.castShadow = true; hand.add(m); }
+  hand.visible = false;
+  stamp.add(hand);
+
   function setLook(next) {
     if (next === look) return;
     look = next;
@@ -199,6 +236,9 @@ export function createStampScene(canvas) {
     knob.material = fixed ? fixed.knob : knobMat;
     neck.material = fixed ? fixed.neck : neckMat;
     eyes.visible = look === 'monster';
+    const isHand = look === 'lula';
+    hand.visible = isHand;
+    for (const m of [base, pad, neck, knob]) m.visible = !isHand;
     setInk(look === 'monster' ? '#7cff6b' : '#ff3b5c');
     wake();
   }
