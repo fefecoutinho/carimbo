@@ -152,8 +152,6 @@ body[data-theme=grafite] {
   --glass: rgba(255, 255, 255, 0.07);
   --glass-line: rgba(255, 255, 255, 0.12);
 }
-body[data-theme=grafite] .h-display,
-body[data-theme=grafite] .hero-date .bignum { letter-spacing: -0.045em; }
 body[data-theme=grafite] .hero-date .bignum {
   background: linear-gradient(180deg, #ffffff 25%, rgba(170, 180, 255, 0.55));
   -webkit-background-clip: text;

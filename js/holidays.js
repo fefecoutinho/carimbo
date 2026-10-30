@@ -62,7 +62,10 @@ export function offDay(k) {
   if (manual) return { name: manual, auto: false };
   if (!store.prefs().holidays) return null;
   const name = holidaysOf(Number(k.slice(0, 4)))[k];
-  return name ? { name, auto: true } : null;
+  if (!name) return null;
+  // Feriado no sábado ou domingo não conta: já não teria aula.
+  const dow = new Date(Number(k.slice(0, 4)), Number(k.slice(5, 7)) - 1, Number(k.slice(8, 10))).getDay();
+  return dow === 0 || dow === 6 ? null : { name, auto: true };
 }
 
 export function nextOffDay(fromKey, maxDays = 370) {
