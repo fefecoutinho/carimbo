@@ -1,6 +1,6 @@
 // Guarda o app no iPhone para abrir rápido e funcionar sem internet.
 // Troque VERSION a cada atualização para o app baixar a versão nova.
-const VERSION = 'carimbo-1.10.1';
+const VERSION = 'carimbo-1.10.2';
 const ASSETS = [
   './',
   'index.html',
@@ -46,7 +46,10 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: 'reload' busca direto do servidor; sem isso o iPhone podia guardar arquivos velhos na versão nova.
+  e.waitUntil(caches.open(VERSION)
+    .then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

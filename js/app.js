@@ -233,7 +233,9 @@ start();
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   // Quando sai uma versão nova, recarrega uma vez para usá-la.
   const hadController = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW', e));
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+    .then((r) => document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => {}); }))
+    .catch((e) => console.warn('SW', e));
   let reloaded = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (reloaded || !hadController) return;

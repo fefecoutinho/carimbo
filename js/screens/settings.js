@@ -6,7 +6,7 @@ import { pop, haptic } from '../fx.js';
 import { nav } from '../nav.js';
 import { THEMES } from '../themes.js';
 
-export const VERSION = '1.10.1';
+export const VERSION = '1.10.2';
 
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 
